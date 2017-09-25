@@ -1,0 +1,102 @@
+{% extends "preregistration/preregbase.html" %}
+{% block title %}Panel Applications{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+<div class="masthead"></div>
+<div class="panel panel-default">
+  <div class="panel-body">
+    <h2>{{ c.EVENT_NAME }} Art Show Application</h2>
+    {% if c.AFTER_ART_SHOW_DEADLINE and not c.HAS_ART_SHOW_ACCESS %}
+    Unfortunately, the deadline for art show applications has passed and we are no longer accepting applications.
+    {% else %}
+      {% if c.AFTER_ART_SHOW_DEADLINE and c.HAS_ART_SHOW_ACCESS %}
+      <span style="color:red">
+        Art show applications have closed, but because you are a logged in
+        administrator you can submit a new application using this form.
+      </span>
+      <br/> <br/>
+      {% endif %}
+      {% if c.AFTER_ART_SHOW_WAITLIST %}
+      <span style="color:orange">
+        The deadline for art show applications has passed. You may still submit an application to be put on our waiting
+        list.
+      </span>
+      <br/><br/>
+      {% endif %}
+
+      Art show applications are due by {{ c.ART_SHOW_DEADLINE|datetime_local }}.
+
+    <form method="post" action="index" class="form-horizontal" role="form">
+      <h3>Your Information</h3>
+      <div class="form-group">
+        <label for="attendee_id" class="col-sm-3 control-label">Confirmation Number</label>
+        <div class="col-sm-6">
+          <input type="text" name="attendee_id" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        </div>
+        <div class="clearfix"></div>
+        <p class="help-block col-sm-6 col-sm-offset-3">The confirmation number you received when you registered.</p>
+      </div>
+
+      <h3>Art Information</h3>
+      <div class="form-group">
+        <label for="panels" class="col-sm-3 control-label">Panels</label>
+        <div class="col-sm-6">
+          <select class="form-control" name="panels">
+            {{ int_options(0, c.MAX_ART_PANELS, app.panels) }}
+          </select>
+        </div>
+        <div class="clearfix"></div>
+        <p class="help-block col-sm-6 col-sm-offset-3">
+          <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+            than {{ c.MAX_ART_PANELS }} panels.</i></p>
+      </div>
+
+      <div class="form-group">
+        <label for="tables" class="col-sm-3 control-label">Tables</label>
+        <div class="col-sm-6">
+          <select class="form-control" name="tables">
+            {{ int_options(0, c.MAX_ART_TABLES, app.tables) }}
+          </select>
+        </div>
+        <div class="clearfix"></div>
+        <p class="help-block col-sm-6 col-sm-offset-3">
+          <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+            than {{ c.MAX_ART_TABLES }} tables.</i></p>
+      </div>
+
+      <div class="form-group">
+        <label for="description" class="col-sm-3 control-label">Description</label>
+        <div class="col-sm-6">
+          <textarea class="form-control" name="description" rows="4" maxlength="400">{{ app.description }}</textarea>
+        </div>
+        <div class="clearfix"></div>
+        <p class="help-block col-sm-6 col-sm-offset-3">A short description of your artwork.</p>
+      </div>
+
+      <div class="form-group">
+          <label for="website" class="col-sm-3 control-label">Website URL</label>
+          <div class="col-sm-6">
+              <input class="form-control" type="text" name="website" value="{{ app.website }}" size="40" />
+          </div>
+      </div>
+
+      <div class="form-group">
+        <label for="special_needs" class="col-sm-3 control-label optional-field">Special Requests</label>
+        <div class="col-sm-6">
+          <textarea class="form-control" name="special_needs" rows="4" >{{ app.special_needs }}</textarea>
+        </div>
+        <div class="clearfix"></div>
+        <p class="help-block col-sm-6 col-sm-offset-3">We cannot necessarily accommodate all requests.</p>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-6 col-sm-offset-3">
+          <button type="submit" class="btn btn-primary">Submit Application</button>
+        </div>
+      </div>
+    </form>
+    
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
