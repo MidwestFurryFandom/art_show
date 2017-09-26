@@ -1,0 +1,51 @@
+{% set readonly = ' readonly ' if app.status != c.UNAPPROVED else '' %}
+<div class="form-group">
+  <label for="panels" class="col-sm-3 control-label">Panels</label>
+  <div class="col-sm-6">
+    <select class="form-control" name="panels"{{ readonly }}>
+      {{ int_options(0, c.MAX_ART_PANELS, app.panels) }}
+    </select>
+  </div>
+  <div class="clearfix"></div>
+  <p class="help-block col-sm-6 col-sm-offset-3">
+    <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+      than {{ c.MAX_ART_PANELS }} panels.</i></p>
+</div>
+
+<div class="form-group">
+  <label for="tables" class="col-sm-3 control-label">Tables</label>
+  <div class="col-sm-6">
+    <select class="form-control" name="tables"{{ readonly }}>
+      {{ int_options(0, c.MAX_ART_TABLES, app.tables) }}
+    </select>
+  </div>
+  <div class="clearfix"></div>
+  <p class="help-block col-sm-6 col-sm-offset-3">
+    <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+      than {{ c.MAX_ART_TABLES }} tables.</i></p>
+</div>
+
+<div class="form-group">
+  <label for="description" class="col-sm-3 control-label">Description</label>
+  <div class="col-sm-6">
+    <textarea class="form-control" name="description" rows="4" maxlength="400"{{ readonly }}>{{ app.description }}</textarea>
+  </div>
+  <div class="clearfix"></div>
+  <p class="help-block col-sm-6 col-sm-offset-3">A short description of your artwork.</p>
+</div>
+
+<div class="form-group">
+  <label for="website" class="col-sm-3 control-label">Website URL</label>
+  <div class="col-sm-6">
+    <input class="form-control" type="text" name="website" value="{{ app.website }}" size="40" {{ readonly }}/>
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="special_needs" class="col-sm-3 control-label optional-field">Special Requests</label>
+  <div class="col-sm-6">
+    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }}>{{ app.special_needs }}</textarea>
+  </div>
+  <div class="clearfix"></div>
+  <p class="help-block col-sm-6 col-sm-offset-3">We cannot guarantee that we will accommodate all requests.</p>
+</div>

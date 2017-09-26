@@ -1,0 +1,24 @@
+{% if attendee.art_show_application or c.BEFORE_ART_SHOW_DEADLINE %}
+<div class="form-group" id="art-show-link">
+  <label for="art_show_link" class="col-sm-2 control-label optional-field">Art Show Application</label>
+    <div class="col-sm-6">
+      <p class="form-control-static">
+        {% if attendee.art_show_application %}
+          {% if attendee.art_show_application.status == c.UNAPPROVED %}
+          Your art show application is pending review. You may edit it
+          <a href="../art_show_application/edit?id={{ attendee.art_show_application.id }}" target="_blank">here</a>.
+          {% elif attendee.art_show_application.status == c.WAITLISTED %}
+          Your art show application is on our waitlist. You will receive an email if a spot opens up.
+          {% elif attendee.art_show_application.status == c.DECLINED %}
+          Unfortunately, we were not able to accept your application.
+          {% endif %}
+        {% else %}
+          You have not yet applied for the {{ c.EVENT_NAME }} art show! You may apply
+          <a href="../art_show_applications/index?attendee_id={{ attendee.id }}" target="_blank">here</a>
+          {% if c.AFTER_ART_SHOW_WAITLIST %} to be added to the waiting list{% endif %}. Art show applications close on
+          {{ c.ART_SHOW_DEADLINE|datetime_local }}
+        {% endif %}
+      </p>
+    </div>
+</div>
+{% endif %}
