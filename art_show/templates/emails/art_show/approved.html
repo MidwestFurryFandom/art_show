@@ -3,7 +3,7 @@
 <body>
 You have been approved to show in the Art Show for {{ c.EVENT_NAME }} this coming {{ event_dates() }}!
 
-{% if app.attendee.badge_status = c.NEW_STATUS %}
+{% if app.attendee.badge_status == c.NEW_STATUS %}
 <br/><br/>In order to complete your application, you must finish filling out your information
 <a href="{{ c.URL_BASE }}//preregistration/confirm?id={{ app.attendee_id }}">here.</a> Afterwards, y
 {% else %}Y{% endif %}ou can pay the ${{ app.total_cost }} you owe using the credit card button
