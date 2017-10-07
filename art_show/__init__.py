@@ -11,6 +11,6 @@ mount_site_sections(config['module_root'])
 
 
 c.MENU.append_menu_item(MenuItem(name='Art Show', access=c.PEOPLE, submenu=[
-    MenuItem(name='Applications', href='../art_show_applications/'),
-    MenuItem(name='Admin', href='../art_show_admin/')
+    MenuItem(name='Applications', href='../art_show_admin/'),
+    MenuItem(name='Link to Apply', href='../art_show_applications/')
                                  ]))

@@ -1,0 +1,25 @@
+<html>
+<head></head>
+<body>
+
+You have updated your application for the Art Show.
+<a href="{{ c.URL_BASE }}/art_show_applications/edit?id={{ app.id }}">Click here</a> to see
+the changes.
+
+<br/><br/>Below is the new application:
+
+<ul>
+    {% if app.artist_name %}<li><strong>Artist Name</strong>: {{ app.artist_name }}</li>{% endif %}
+    <li><strong>Panels</strong>: {{ app.panels }} panels (${{ app.panels_cost }}) </li>
+    <li><strong>Tables</strong>: {{ app.tables }} table spaces (${{ app.tables_cost }}) </li>
+    <li><strong>Total Price</strong>: ${{ app.potential_cost }}</li>
+    <li><strong>Description</strong>: {{ app.description }}</li>
+    {% if app.special_needs %}<li><strong>Special Requests</strong>: {{ app.special_needs }}</li>{% endif %}
+    {% if app.attendee.badge_status == c.NOT_ATTENDING %}<li>You will not be attending {{ c.EVENT_NAME }} and thus will
+    not be issued a badge. If you expect this to change, please contact the art show staff at {{ c.ART_SHOW_EMAIL }}
+    {% endif %}
+    {% if app.website %}<li><strong>Website URL</strong>: {{ app.website }}</li>{% endif %}
+</ul>
+
+</body>
+</html>

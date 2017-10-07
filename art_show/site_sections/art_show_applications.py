@@ -1,7 +1,5 @@
 from uber.common import *
 
-ATTENDEE_FIELDS = ['first_name', 'last_name', 'email']
-
 
 @all_renderable()
 class Root:
@@ -9,29 +7,28 @@ class Root:
         app = session.art_show_application(params, restricted=True, ignore_csrf=True)
         attendee = None
 
-        if params.get('attendee_id', ''):
+        if cherrypy.request.method == 'GET' and params.get('attendee_id', ''):
             try:
                 attendee = session.attendee(id=params['attendee_id'])
             except:
-                message = 'The confirmation number you entered is not valid, or there is no matching badge.'
+                message = 'We could not find you by your confirmation number. Is the URL correct?'
 
         if cherrypy.request.method == 'POST':
-            if not attendee and not message:
-                attendee_params = {attr: params.get(attr, '') for attr in ATTENDEE_FIELDS}
-                attendee = attendee or session.attendee(attendee_params, restricted=True, ignore_csrf=True)
-                attendee.placeholder = True
-                if params.get('not_attending', ''):
-                    attendee.badge_status = c.NOT_ATTENDING
-                if not params.get('email', ''):
-                    message = 'We need your email address to send you your application confirmation.'
-                else:
-                    message = check(attendee)
+            attendee, message = session.attendee_from_art_show_app(**params)
 
-            message = message or check(app)
+            message = message or check(attendee) or check(app)
             if not message:
+                if c.AFTER_ART_SHOW_WAITLIST:
+                    app.status = c.WAITLISTED
                 session.add(attendee)
                 app.attendee = attendee
+                attendee.art_show_application = app
                 session.add(app)
+                send_email(c.ART_SHOW_EMAIL, app.email, 'Art Show Application Received',
+                           render('emails/art_show/application.html', {'app': app}), model=app)
+                send_email(c.ART_SHOW_EMAIL, c.ART_SHOW_EMAIL, 'Art Show Application Received',
+                           render('emails/art_show/reg_notification.txt', {'app': app}), model=app)
+                session.commit()
                 raise HTTPRedirect('confirmation?id={}', app.id)
 
         return {
@@ -50,6 +47,8 @@ class Root:
             message = check(app)
             if not message:
                 session.add(app)
+                send_email(c.ART_SHOW_EMAIL, app.email, 'Art Show Application Updated',
+                           render('emails/art_show/appchange_notification.html', {'app': app}), model=app)
                 raise HTTPRedirect('edit?id={}&message={}', app.id, 'Your application has been updated')
 
         return {
@@ -64,10 +63,17 @@ class Root:
     @credit_card
     def process_art_show_payment(self, session, payment_id, stripeToken):
         charge = Charge.get(payment_id)
+        [attendee] = charge.attendees
+        attendee = session.merge(attendee)
+        app = attendee.art_show_application
         message = charge.charge_cc(session, stripeToken)
         if message:
-            raise HTTPRedirect('edit?id={}&message={}', app.id, message)
+            raise HTTPRedirect('edit?id={}&message={}', attendee.art_show_application.id, message)
         else:
             attendee.amount_paid += charge.dollar_amount
             session.add(attendee)
-            raise HTTPRedirect('edit?id={}&message={}', app.id, 'Your payment has been accepted!')
+            send_email(c.ART_SHOW_EMAIL, c.ART_SHOW_EMAIL, 'Art Show Payment Received',
+                       render('emails/art_show/payment_notification.txt', {'app': app}), model=app)
+            send_email(c.ART_SHOW_EMAIL, app.email, 'Art Show Payment Received',
+                       render('emails/art_show/payment_confirmation.txt', {'app': app}), model=app)
+            raise HTTPRedirect('edit?id={}&message={}', attendee.art_show_application.id, 'Your payment has been accepted!')

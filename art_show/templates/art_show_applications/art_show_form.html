@@ -1,28 +1,47 @@
-{% set readonly = ' readonly ' if app.status != c.UNAPPROVED else '' %}
+{% set readonly = ' readonly ' if app.status != c.UNAPPROVED and not admin_area else '' %}
+{% set no_help_text = readonly != '' %}
+{% set max_tables = c.MAX_ART_TABLES if not admin_area else 100 %}
+{% set max_panels = c.MAX_ART_PANELS if not admin_area else 100 %}
+<div class="form-group">
+  <label for="artist_name" class="col-sm-3 control-label optional-field">Artist Name</label>
+  <div class="col-sm-6">
+    <input class="form-control" type="text" name="artist_name" value="{{ app.artist_name }}" size="40" {{ readonly }}/>
+  </div>
+  {% if not no_help_text %}
+  <div class="clearfix"></div>
+  <p class="help-block col-sm-6 col-sm-offset-3">The name you want to use with your artwork, if different from your
+    first and last name.</p>
+  {% endif %}
+</div>
+
 <div class="form-group">
   <label for="panels" class="col-sm-3 control-label">Panels</label>
   <div class="col-sm-6">
     <select class="form-control" name="panels"{{ readonly }}>
-      {{ int_options(0, c.MAX_ART_PANELS, app.panels) }}
-    </select>
+      {{ int_options(0, max_panels, app.panels) }}
+    </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
   </div>
+  {% if not no_help_text %}
   <div class="clearfix"></div>
   <p class="help-block col-sm-6 col-sm-offset-3">
     <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
       than {{ c.MAX_ART_PANELS }} panels.</i></p>
+  {% endif %}
 </div>
 
 <div class="form-group">
   <label for="tables" class="col-sm-3 control-label">Tables</label>
   <div class="col-sm-6">
     <select class="form-control" name="tables"{{ readonly }}>
-      {{ int_options(0, c.MAX_ART_TABLES, app.tables) }}
-    </select>
+      {{ int_options(0, max_tables, app.tables) }}
+    </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table){% endif %}
   </div>
+  {% if not no_help_text %}
   <div class="clearfix"></div>
   <p class="help-block col-sm-6 col-sm-offset-3">
     <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
       than {{ c.MAX_ART_TABLES }} tables.</i></p>
+  {% endif %}
 </div>
 
 <div class="form-group">
@@ -30,12 +49,14 @@
   <div class="col-sm-6">
     <textarea class="form-control" name="description" rows="4" maxlength="400"{{ readonly }}>{{ app.description }}</textarea>
   </div>
+  {% if not no_help_text %}
   <div class="clearfix"></div>
   <p class="help-block col-sm-6 col-sm-offset-3">A short description of your artwork.</p>
+  {% endif %}
 </div>
 
 <div class="form-group">
-  <label for="website" class="col-sm-3 control-label">Website URL</label>
+  <label for="website" class="col-sm-3 control-label optional-field">Website URL</label>
   <div class="col-sm-6">
     <input class="form-control" type="text" name="website" value="{{ app.website }}" size="40" {{ readonly }}/>
   </div>
@@ -46,6 +67,8 @@
   <div class="col-sm-6">
     <textarea class="form-control" name="special_needs" rows="4"{{ readonly }}>{{ app.special_needs }}</textarea>
   </div>
+  {% if not no_help_text %}
   <div class="clearfix"></div>
   <p class="help-block col-sm-6 col-sm-offset-3">We cannot guarantee that we will accommodate all requests.</p>
+  {% endif %}
 </div>

@@ -1,0 +1,7 @@
+{{ app.attendee.first_name }},
+
+Your payment of ${{ app.total_cost }} for space in the {{ c.EVENT_NAME }} Art Show has been received. You will have
+{{ app.panels }} panels and {{ app.tables }} tables available to display your art. The Art Show director will continue
+to be in touch with you to keep you informed of Art Show rules and procedures.
+
+{{ c.ART_SHOW_SIGNATURE }}

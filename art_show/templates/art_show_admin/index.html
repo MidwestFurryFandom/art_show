@@ -1,0 +1,39 @@
+{% extends "base-admin.html" %}
+{% block title %}Art Show Admin{% endblock %}
+{% block content %}
+
+<ol class="breadcrumb">
+  <li><a href="../accounts/homepage">Home</a></li>
+  <li>Art Show</li>
+  <li class="active">Admin</li>
+</ol>
+
+<div class="panel panel-default">
+
+    <a class="btn btn-default" href="form?new_app=True">Add an application</a>
+<table class="table table-striped datatable">
+<thead><tr>
+    <th>Name</th>
+    <th>Status</th>
+    <th>Panels</th>
+    <th>Tables</th>
+    <th>Art Show Cost</th>
+    <th>Paid</th>
+    <th>Admin Notes</th>
+</tr></thead>
+{% for app in applications %}
+    <tr>
+        <td style="text-align:left" data-order="{{ app.attendee.full_name }}" data-search="{{ app.attendee.full_name }}"> <a href="form?id={{ app.id }}">{{ app.attendee.full_name|default("?????") }}</a> </td>
+        <td>{{ app.status_label }}</td>
+        <td>{{ app.panels }}</td>
+        <td>{{ app.tables }}</td>
+        <td>${{ app.total_cost }}</td>
+        <td>{{ app.attendee.amount_paid|yesno('Yes,No') if app.total_cost else 'N/A' }}</td>
+        <td>{{ app.attendee.admin_notes }}</td>
+    </tr>
+{% endfor %}
+	<caption align="bottom">
+		<ul class="pagination"></ul>
+	</caption>
+</table>
+{% endblock %}

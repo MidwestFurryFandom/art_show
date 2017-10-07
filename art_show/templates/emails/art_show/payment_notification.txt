@@ -1,0 +1,2 @@
+"{{ app.artist_name|default(app.attendee.full_name) }}" has just paid for their Art Show registration.
+{{ c.URL_BASE }}/art_show_admin/form?id={{ app.id }}

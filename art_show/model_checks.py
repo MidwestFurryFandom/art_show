@@ -2,7 +2,7 @@ from . import *
 from uber.model_checks import ignore_unassigned_and_placeholders
 
 
-ArtShowApplication.required = [('description', 'Description'), ('website', 'Website')]
+ArtShowApplication.required = [('description', 'Description')]
 
 
 @validation.ArtShowApplication
