@@ -29,11 +29,13 @@
 
       {% include 'art_show_applications/art_show_form.html' %}
 
+      {% if app.status == c.UNAPPROVED %}
       <div class="form-group">
         <div class="col-sm-6 col-sm-offset-3">
           <button type="submit" class="btn btn-primary">Update Application</button>
         </div>
       </div>
+      {% endif %}
     </form>
   </div>
 </div>
