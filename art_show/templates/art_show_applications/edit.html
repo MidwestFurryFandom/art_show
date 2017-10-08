@@ -8,7 +8,7 @@
     <h2>{{ c.EVENT_NAME }} Art Show Application</h2>
       {% if app.status == c.APPROVED %}
       Congratulations, your application has been approved!
-        {% if attendee.badge_status == c.NEW_STATUS %}
+        {% if app.attendee.badge_status == c.NEW_STATUS %}
           Before completing your application, please finish filling out your information
           <a href="../preregistration/confirm?id={{ app.attendee_id }}" target="_blank">here</a>. Afterwards, you will
           be able to pay for your application on this page.

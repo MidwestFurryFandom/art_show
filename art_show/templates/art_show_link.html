@@ -5,13 +5,13 @@
     <p class="form-control-static">
       {% if attendee.art_show_application and not admin_area %}
         {% if attendee.art_show_application.status == c.UNAPPROVED %}
-          Your art show application is pending review. You may still edit your application until it is reviwed.
+          Your art show application is pending review. You may still edit your application until it is reviewed.
         {% elif attendee.art_show_application.status == c.WAITLISTED %}
           Your art show application is on our waitlist. You will receive an email if a spot opens up.
         {% elif attendee.art_show_application.status == c.DECLINED %}
           Unfortunately, we were not able to accept your application.
         {% else %}
-          Your application has been approved! {% if attendee.app.is_unpaid %}Please make sure to pay before the
+          Your application has been approved! {% if attendee.art_show_application.is_unpaid %}Please make sure to pay before the
           deadline of {{ c.ART_SHOW_PAYMENT_DUE|datetime_local }}.{% endif %}
         {% endif %}
         You may view your art show application
