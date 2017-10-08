@@ -25,7 +25,7 @@ class Root:
                 attendee.art_show_application = app
                 session.add(app)
                 send_email(c.ART_SHOW_EMAIL, app.email, 'Art Show Application Received',
-                           render('emails/art_show/application.html', {'app': app}), model=app)
+                           render('emails/art_show/application.html', {'app': app}), 'html', model=app)
                 send_email(c.ART_SHOW_EMAIL, c.ART_SHOW_EMAIL, 'Art Show Application Received',
                            render('emails/art_show/reg_notification.txt', {'app': app}), model=app)
                 session.commit()
