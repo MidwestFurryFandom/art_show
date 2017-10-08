@@ -1,7 +1,7 @@
 {% set readonly = ' readonly ' if app.status != c.UNAPPROVED and not admin_area else '' %}
 {% set no_help_text = readonly != '' %}
-{% set max_tables = c.MAX_ART_TABLES if not admin_area else 100 %}
-{% set max_panels = c.MAX_ART_PANELS if not admin_area else 100 %}
+{% set max_tables = c.MAX_ART_TABLES if not admin_area else 30 %}
+{% set max_panels = c.MAX_ART_PANELS if not admin_area else 30 %}
 <div class="form-group">
   <label for="artist_name" class="col-sm-3 control-label optional-field">Artist Name</label>
   <div class="col-sm-6">
