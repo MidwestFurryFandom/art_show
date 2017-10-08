@@ -12,14 +12,13 @@
           Before completing your application, please finish filling out your information
           <a href="../preregistration/confirm?id={{ app.attendee_id }}" target="_blank">here</a>. Afterwards, you will
           be able to pay for your application on this page.
-          {% if app.is_unpaid %}
-            In order to complete your application, please pay ${{ app.attendee.amount_unpaid }} using the button below.
-            {% if app.attendee.badge_cost %}This total includes the cost of your badge, if you have not paid for it
-            already.{% endif %}<br/>
-            <div style="text-align:center">
-                {{ stripe_form('process_art_show_payment', charge) }}
-            </div><br/><br/>
-          {% endif %}
+        {% elif app.is_unpaid %}
+          In order to complete your application, please pay ${{ app.attendee.amount_unpaid }} using the button below.
+          {% if app.attendee.badge_cost %}This total includes the cost of your badge, if you have not paid for it
+          already.{% endif %}<br/>
+          <div style="text-align:center">
+              {{ stripe_form('process_art_show_payment', charge) }}
+          </div><br/><br/>
         {% endif %}
       {% elif app.status != c.UNAPPROVED %}
       Unfortunately, since your application has been {{ app.status_label|lower }}, you may no longer edit it. However,
