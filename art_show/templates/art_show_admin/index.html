@@ -28,7 +28,8 @@
         <td>{{ app.panels }}</td>
         <td>{{ app.tables }}</td>
         <td>${{ app.potential_cost }}</td>
-        <td>{{ app.attendee.amount_paid|yesno('Yes,No') if app.total_cost else 'N/A' }}</td>
+        <td>{% if app.status == c.APPROVED %}{{ app.is_unpaid|yesno('No,Yes') }}
+            {% else %}N/A ({{ app.status_label }}){% endif %}</td>
         <td>{{ app.attendee.admin_notes }}</td>
     </tr>
 {% endfor %}
