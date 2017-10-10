@@ -6,6 +6,7 @@
     var showOrHideNewBadge = function() {
         var noBadgeChecked = $.field("new_badge").prop('checked');
         setVisible($('#new-badge'), noBadgeChecked);
+        $.field("attendee_id").prop('disabled', noBadgeChecked);
         setVisible($.field('attendee_id').parents('.form-group'), !noBadgeChecked);
     };
     $(function() {
