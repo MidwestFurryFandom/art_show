@@ -1,5 +1,5 @@
 {% set readonly = ' disabled ' if app.status != c.UNAPPROVED and not admin_area else '' %}
-{% set no_help_text = readonly != '' %}
+{% set no_help_text = app.status != c.UNAPPROVED or admin_area %}
 {% set max_tables = c.MAX_ART_TABLES if not admin_area else 30 %}
 {% set max_panels = c.MAX_ART_PANELS if not admin_area else 30 %}
 <div class="form-group">

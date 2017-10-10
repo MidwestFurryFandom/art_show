@@ -16,7 +16,7 @@ class Root:
         if cherrypy.request.method == 'POST':
             attendee, message = session.attendee_from_art_show_app(**params)
 
-            message = message or check(attendee) or check(app)
+            message = message or check(attendee) or check(app, prereg=True)
             if not message:
                 if c.AFTER_ART_SHOW_WAITLIST:
                     app.status = c.WAITLISTED
@@ -44,7 +44,7 @@ class Root:
         app = session.art_show_application(params, restricted=True, ignore_csrf=True)
 
         if cherrypy.request.method == 'POST':
-            message = check(app)
+            message = check(app, prereg=True)
             if not message:
                 session.add(app)
                 send_email(c.ART_SHOW_EMAIL, app.email, 'Art Show Application Updated',
