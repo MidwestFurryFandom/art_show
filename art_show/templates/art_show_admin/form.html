@@ -69,14 +69,19 @@ app, c.PAGE_PATH,
       {% include 'art_show_applications/art_show_form.html' %}
 
       <div class="form-group">
-        <label class="col-sm-3 control-label">Application Price</label>
-        <div class="col-sm-6">
-          <input type="text" class="form-control" name="overridden_price" placeholder="{{ app.base_price }}"
+        <label class="col-sm-3 control-label">Discounted Price</label>
+        <div class="col-sm-2">
+          <input type="text" class="form-control" name="overridden_price"
                  value="{{ app.overridden_price if app.overridden_price != None else '' }}" />
         </div>
+        <span class="col-sm-4 form-control-static">
+          (Base Price: ${{ app.base_price|default(app.potential_cost) }})
+        </span>
         <div class="clearfix"></div>
         <p class="help-block col-sm-6 col-sm-offset-3">Change this to set an override on the application price, or leave
-          it blank to remove the overridden price.</p>
+          it blank to use the base price.
+          {% if app.status != c.APPROVED %}<br/>Attendees are only asked to pay once their applications are approved.
+          {% endif %}</p>
       </div>
 
       <div class="form-group">
