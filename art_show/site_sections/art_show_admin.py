@@ -23,7 +23,8 @@ class Root:
             message = message or check(app)
             if not message:
                 if attendee:
-                    attendee.badge_status = params.get('badge_status', '')
+                    if params.get('badge_status', ''):
+                        attendee.badge_status = params['badge_status']
                     session.add(attendee)
                     app.attendee = attendee
                 session.add(app)
