@@ -1,7 +1,7 @@
 from uber.common import *
 
 
-@all_renderable()
+@all_renderable(c.ART_SHOW)
 class Root:
     def index(self, session, message=''):
         return {
