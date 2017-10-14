@@ -10,7 +10,10 @@ class Root:
         }
 
     def form(self, session, new_app='', message='', **params):
-        app = session.art_show_application(params)
+        if new_app and 'attendee_id' in params:
+            app = session.art_show_application(params, ignore_csrf=True)
+        else:
+            app = session.art_show_application(params)
         attendee = None
         if cherrypy.request.method == 'POST':
             if new_app:

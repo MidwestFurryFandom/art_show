@@ -1,4 +1,4 @@
-{% if attendee.art_show_application or c.BEFORE_ART_SHOW_DEADLINE %}
+{% if attendee.art_show_application or c.BEFORE_ART_SHOW_DEADLINE or admin_area and c.HAS_ART_SHOW_ACCESS %}
 <div class="form-group" id="art-show-link">
   <label for="art_show_link" class="col-sm-2 control-label optional-field">Art Show Application</label>
   <div class="col-sm-6">
@@ -20,12 +20,12 @@
         You have not yet applied for the {{ c.EVENT_NAME }} art show! You may apply
         <a href="../art_show_applications/index?attendee_id={{ attendee.id }}" target="_blank">here</a>{% if c.AFTER_ART_SHOW_WAITLIST %} to be added to the waiting list{% endif %}.
         Art show applications close on {{ c.ART_SHOW_DEADLINE|datetime_local }}.
-      {% elif attendee.art_show_application %}
+      {% elif attendee.art_show_application and c.HAS_ART_SHOW_ACCESS %}
         This attendee has an art show application with {{ attendee.art_show_application.status_label }} status.
         <a href="../art_show_admin/form?id={{ attendee.art_show_application.id }}" target="_blank">View/Edit</a>
-      {% else %}
+      {% elif c.HAS_ART_SHOW_ACCESS %}
         This attendee does not have an art show application.
-        <a href="../art_show_admin/form?attendee_id={{ attendee.id }}" target="_blank">Create one now</a>.
+        <a href="../art_show_admin/form?attendee_id={{ attendee.id }}&new_app=true" target="_blank">Create one now</a>.
       {% endif %}
     </p>
   </div>
