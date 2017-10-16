@@ -18,9 +18,9 @@ class SessionMixin:
                     return None, 'The confirmation number you entered is not valid, or there is no matching badge.'
 
             if attendee.badge_status in [c.INVALID_STATUS, c.WATCHED_STATUS]:
-                message = 'This badge is invalid. Please contact registration.'
+                return None, 'This badge is invalid. Please contact registration.'
             elif attendee.art_show_application:
-                message = 'There is already an art show application for that badge!'
+                return None, 'There is already an art show application for that badge!'
         else:
             attendee_params = {attr: params.get(attr, '') for attr in ['first_name', 'last_name', 'email']}
             attendee = self.attendee(attendee_params, restricted=True, ignore_csrf=True)
