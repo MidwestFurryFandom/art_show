@@ -12,7 +12,10 @@ class SessionMixin:
             try:
                 attendee = self.attendee(id=params['attendee_id'])
             except:
-                return None, 'The confirmation number you entered is not valid, or there is no matching badge.'
+                try:
+                    attendee = self.attendee(public_id=params['attendee_id'])
+                except:
+                    return None, 'The confirmation number you entered is not valid, or there is no matching badge.'
 
             if attendee.badge_status in [c.INVALID_STATUS, c.WATCHED_STATUS]:
                 message = 'This badge is invalid. Please contact registration.'
