@@ -31,3 +31,13 @@ def min_tables(app):
 def need_some_space(app):
     if not app.panels and not app.tables:
         return 'Please select how many panels and/or tables to include on this application.'
+
+
+@validation.ArtShowApplication
+def discounted_price(app):
+    try:
+        cost = int(float(app.overridden_price if app.overridden_price else 0))
+        if cost < 0:
+            return 'Overridden Price must be a number that is 0 or higher.'
+    except:
+        return "What you entered for Overridden Price ({}) isn't even a number".format(app.overridden_price)
