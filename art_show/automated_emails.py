@@ -28,7 +28,8 @@ ArtShowAppEmail('Your {EVENT_NAME} Art Show application has been declined', 'art
                 ident='art_show_declined')
 
 ArtShowAppEmail('Reminder to pay for your {EVENT_NAME} Art Show application', 'art_show/payment_reminder.txt',
-                lambda a: a.status == c.APPROVED and days_before(14, c.ART_SHOW_PAYMENT_DUE) and a.is_unpaid,
+                lambda a: a.status == c.APPROVED and a.is_unpaid,
+                when=days_before(14, c.ART_SHOW_PAYMENT_DUE),
                 needs_approval=False,
                 ident='art_show_payment_reminder')
 
