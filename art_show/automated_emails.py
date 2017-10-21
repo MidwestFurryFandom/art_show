@@ -10,7 +10,7 @@ class ArtShowAppEmail(AutomatedEmail):
     def __init__(self, subject, template, filter, ident, **kwargs):
         AutomatedEmail.__init__(self, ArtShowApplication, subject, template,
                                 lambda app: True and filter(app),
-                                ident, sender=c.PANELS_EMAIL, **kwargs)
+                                ident, sender=c.ART_SHOW_EMAIL, **kwargs)
 
 ArtShowAppEmail('Your {EVENT_NAME} Art Show application has been approved', 'art_show/approved.html',
                 lambda a: a.status == c.APPROVED,
