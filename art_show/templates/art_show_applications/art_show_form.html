@@ -17,30 +17,40 @@
 <div class="form-group">
   <label for="panels" class="col-sm-3 control-label">Panels</label>
   <div class="col-sm-6">
-    <select class="form-control" name="panels"{{ readonly }}>
-      {{ int_options(0, max_panels, app.panels) }}
-    </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
-  </div>
-  {% if not no_help_text %}
-  <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">
-    <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-      than {{ c.MAX_ART_PANELS }} panels.</i></p>
+    {% if app.panels and app.panels > max_panels %}
+      An admin has granted you {{ app.panels }} panels. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      if you wish to change the number of panels on your application.
+    {% else %}
+      <select class="form-control" name="panels"{{ readonly }}>
+        {{ int_options(0, max_panels, app.panels) }}
+      </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
+      </div>
+    {% if not no_help_text %}
+    <div class="clearfix"></div>
+    <p class="help-block col-sm-6 col-sm-offset-3">
+      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+        than {{ c.MAX_ART_PANELS }} panels.</i></p>
+    {% endif %}
   {% endif %}
 </div>
 
 <div class="form-group">
   <label for="tables" class="col-sm-3 control-label">Tables</label>
   <div class="col-sm-6">
-    <select class="form-control" name="tables"{{ readonly }}>
-      {{ int_options(0, max_tables, app.tables) }}
-    </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table){% endif %}
-  </div>
-  {% if not no_help_text %}
-  <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">
-    <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-      than {{ c.MAX_ART_TABLES }} tables.</i></p>
+    {% if app.tables and app.tables > max_tables %}
+      An admin has granted you {{ app.tables }} tables. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      if you wish to change the number of tables on your application.
+    {% else %}
+      <select class="form-control" name="tables"{{ readonly }}>
+        {{ int_options(0, max_tables, app.tables) }}
+      </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table){% endif %}
+    </div>
+    {% if not no_help_text %}
+    <div class="clearfix"></div>
+    <p class="help-block col-sm-6 col-sm-offset-3">
+      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+        than {{ c.MAX_ART_TABLES }} tables.</i></p>
+    {% endif %}
   {% endif %}
 </div>
 
