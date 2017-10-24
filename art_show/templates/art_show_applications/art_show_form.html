@@ -75,7 +75,7 @@
 <div class="form-group">
   <label for="special_needs" class="col-sm-3 control-label optional-field">Special Requests</label>
   <div class="col-sm-6">
-    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }}>{{ app.special_needs }}</textarea>
+    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }} placeholder="Indicate how many spaces you want in the general vs adult sections">{{ app.special_needs }}</textarea>
   </div>
   {% if not no_help_text %}
   <div class="clearfix"></div>
