@@ -17,7 +17,7 @@
 <div class="form-group">
   <label for="panels" class="col-sm-3 control-label">Panels</label>
   <div class="col-sm-6">
-    {% if app.panels and app.panels > max_panels %}
+    {% if app.panels and app.panels > max_panels and not admin_area %}
       An admin has granted you {{ app.panels }} panels. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
       if you wish to change the number of panels on your application.
     {% else %}
@@ -37,7 +37,7 @@
 <div class="form-group">
   <label for="tables" class="col-sm-3 control-label">Tables</label>
   <div class="col-sm-6">
-    {% if app.tables and app.tables > max_tables %}
+    {% if app.tables and app.tables > max_tables and not admin_area %}
       An admin has granted you {{ app.tables }} tables. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
       if you wish to change the number of tables on your application.
     {% else %}
