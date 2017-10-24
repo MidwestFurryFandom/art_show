@@ -50,8 +50,7 @@ class ArtShowApplication(MagModel):
 
     @presave_adjustment
     def _cost_adjustments(self):
-        if not self.base_price:
-            self.base_price = self.default_cost
+        self.base_price = self.default_cost
 
         if self.overridden_price == '':
             self.overridden_price = None
