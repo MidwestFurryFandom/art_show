@@ -75,10 +75,10 @@
 <div class="form-group">
   <label for="special_needs" class="col-sm-3 control-label optional-field">Special Requests</label>
   <div class="col-sm-6">
-    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }}>{{ app.special_needs }}</textarea>
+    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }} placeholder="Indicate how many spaces you want in the general vs adult sections">{{ app.special_needs }}</textarea>
   </div>
   {% if not no_help_text %}
   <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">We cannot guarantee that we will accommodate all requests. Use this space to indicate how many spaces you want in the general vs adult sections.</p>
+  <p class="help-block col-sm-6 col-sm-offset-3">We cannot guarantee that we will accommodate all requests.</p>
   {% endif %}
 </div>
