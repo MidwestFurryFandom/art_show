@@ -83,7 +83,7 @@ class ArtShowApplication(MagModel):
 
     @property
     def is_unpaid(self):
-        return self.total_cost > 0 and (self.attendee.amount_paid - self.attendee.badge_cost) < self.total_cost
+        return self.attendee.amount_unpaid > 0
 
 
 @Session.model_mixin
