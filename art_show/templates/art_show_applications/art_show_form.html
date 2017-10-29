@@ -45,7 +45,7 @@
     {% else %}
       <select class="form-control" name="tables"{{ readonly }}>
         {{ int_options(0, max_tables, app.tables) }}
-      </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table){% endif %}
+      </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table section){% endif %}
 
     {% endif %}
     </div>
