@@ -26,7 +26,7 @@
       </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
       {% endif %}
     </div>
-    {% if not no_help_text %}
+    {% if not no_help_text and app.panels < max_panels %}
     <div class="clearfix"></div>
     <p class="help-block col-sm-6 col-sm-offset-3">
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
@@ -49,7 +49,7 @@
 
     {% endif %}
     </div>
-    {% if not no_help_text %}
+    {% if not no_help_text and app.tables < max_tables %}
     <div class="clearfix"></div>
     <p class="help-block col-sm-6 col-sm-offset-3">
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
