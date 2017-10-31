@@ -16,7 +16,7 @@ may complete your registration
 <ul>
     {% if app.artist_name %}<li><strong>Artist Name</strong>: {{ app.artist_name }}</li>{% endif %}
     <li><strong>Panels</strong>: {{ app.panels }} panels (${{ app.panels_cost }}) </li>
-    <li><strong>Tables</strong>: {{ app.tables }} table spaces (${{ app.tables_cost }}) </li>
+    <li><strong>Table Sections</strong>: {{ app.tables }} table sections (${{ app.tables_cost }}) </li>
     <li><strong>Total Price</strong>: ${{ app.potential_cost }}</li>
     <li><strong>Description</strong>: {{ app.description }}</li>
     {% if app.special_needs %}<li><strong>Special Requests</strong>: {{ app.special_needs }}</li>{% endif %}

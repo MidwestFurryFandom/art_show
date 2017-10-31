@@ -17,31 +17,44 @@
 <div class="form-group">
   <label for="panels" class="col-sm-3 control-label">Panels</label>
   <div class="col-sm-6">
-    <select class="form-control" name="panels"{{ readonly }}>
-      {{ int_options(0, max_panels, app.panels) }}
-    </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
-  </div>
-  {% if not no_help_text %}
-  <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">
-    <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-      than {{ c.MAX_ART_PANELS }} panels.</i></p>
-  {% endif %}
+    {% if app.panels and app.panels > max_panels and not admin_area %}
+      <div class="form-control-static">An admin has granted you {{ app.panels }} panels. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      if you wish to change the number of panels on your application.</div>
+    {% else %}
+      <select class="form-control" name="panels"{{ readonly }}>
+        {{ int_options(0, max_panels, app.panels) }}
+      </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
+      {% endif %}
+    </div>
+    {% if not no_help_text and app.panels < max_panels %}
+    <div class="clearfix"></div>
+    <p class="help-block col-sm-6 col-sm-offset-3">
+      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+        than {{ c.MAX_ART_PANELS }} panels.</i></p>
+    {% endif %}
+
+
 </div>
 
 <div class="form-group">
-  <label for="tables" class="col-sm-3 control-label">Tables</label>
+  <label for="tables" class="col-sm-3 control-label">Table Sections</label>
   <div class="col-sm-6">
-    <select class="form-control" name="tables"{{ readonly }}>
-      {{ int_options(0, max_tables, app.tables) }}
-    </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table){% endif %}
-  </div>
-  {% if not no_help_text %}
-  <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">
-    <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-      than {{ c.MAX_ART_TABLES }} tables.</i></p>
-  {% endif %}
+    {% if app.tables and app.tables > max_tables and not admin_area %}
+      <div class="form-control-static">An admin has granted you {{ app.tables }} table sections. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      if you wish to change the number of table sections on your application.</div>
+    {% else %}
+      <select class="form-control" name="tables"{{ readonly }}>
+        {{ int_options(0, max_tables, app.tables) }}
+      </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table section){% endif %}
+
+    {% endif %}
+    </div>
+    {% if not no_help_text and app.tables < max_tables %}
+    <div class="clearfix"></div>
+    <p class="help-block col-sm-6 col-sm-offset-3">
+      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+        than {{ c.MAX_ART_TABLES }} table sections.</i></p>
+    {% endif %}
 </div>
 
 <div class="form-group">
@@ -65,7 +78,7 @@
 <div class="form-group">
   <label for="special_needs" class="col-sm-3 control-label optional-field">Special Requests</label>
   <div class="col-sm-6">
-    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }}>{{ app.special_needs }}</textarea>
+    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }} placeholder="Indicate how many spaces you want in the general vs adult sections">{{ app.special_needs }}</textarea>
   </div>
   {% if not no_help_text %}
   <div class="clearfix"></div>

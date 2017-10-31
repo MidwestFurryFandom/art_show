@@ -50,8 +50,7 @@ class ArtShowApplication(MagModel):
 
     @presave_adjustment
     def _cost_adjustments(self):
-        if not self.base_price:
-            self.base_price = self.default_cost
+        self.base_price = self.default_cost
 
         if self.overridden_price == '':
             self.overridden_price = None
@@ -84,7 +83,7 @@ class ArtShowApplication(MagModel):
 
     @property
     def is_unpaid(self):
-        return self.total_cost > 0 and (self.attendee.amount_paid - self.attendee.badge_cost) < self.total_cost
+        return self.attendee.amount_unpaid > 0
 
 
 @Session.model_mixin
