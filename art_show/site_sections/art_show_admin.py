@@ -51,3 +51,34 @@ class Root:
                                 and_(Tracking.model == 'ArtShowApplication', Tracking.fk_id == id)))
                     .order_by(Tracking.when).all()
             }
+
+    @unrestricted
+    def sales_charge_form(self, message='', amount=None, description='', sale_id=None):
+        charge = None
+        if amount is not None:
+            if not description:
+                message = "You must enter a brief description of what's being sold"
+            else:
+                charge = Charge(amount=int(100 * float(amount)), description=description)
+
+        return {
+            'charge': charge,
+            'message': message,
+            'amount': amount,
+            'description': description,
+            'sale_id': sale_id
+        }
+
+    @unrestricted
+    @credit_card
+    def sales_charge(self, session, payment_id, stripeToken):
+        charge = Charge.get(payment_id)
+        message = charge.charge_cc(session, stripeToken)
+        if message:
+            raise HTTPRedirect('sales_charge_form?message={}', message)
+        else:
+            session.add(ArbitraryCharge(
+                amount=charge.dollar_amount,
+                what=charge.description
+            ))
+            raise HTTPRedirect('sales_charge_form?message={}', 'Charge successfully processed')
