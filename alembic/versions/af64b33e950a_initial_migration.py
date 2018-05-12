@@ -15,12 +15,12 @@ depends_on = None
 
 from alembic import op
 import sqlalchemy as sa
-import sideboard.lib.sa
+import residue
 
 
 try:
     is_sqlite = op.get_context().dialect.name == 'sqlite'
-except:
+except Exception:
     is_sqlite = False
 
 if is_sqlite:
@@ -53,16 +53,16 @@ sqlite_reflect_kwargs = {
 
 def upgrade():
     op.create_table('art_show_application',
-    sa.Column('id', sideboard.lib.sa.UUID(), nullable=False),
-    sa.Column('attendee_id', sideboard.lib.sa.UUID(), nullable=True),
-    sa.Column('artist_name', sideboard.lib.sa.CoerceUTF8(), nullable=False),
+    sa.Column('id', residue.UUID(), nullable=False),
+    sa.Column('attendee_id', residue.UUID(), nullable=True),
+    sa.Column('artist_name', residue.CoerceUTF8(), nullable=False),
     sa.Column('panels', sa.Integer(), server_default='0', nullable=False),
     sa.Column('tables', sa.Integer(), server_default='0', nullable=False),
-    sa.Column('description', sideboard.lib.sa.CoerceUTF8(), nullable=False),
-    sa.Column('website', sideboard.lib.sa.CoerceUTF8(), nullable=False),
-    sa.Column('special_needs', sideboard.lib.sa.CoerceUTF8(), nullable=False),
+    sa.Column('description', residue.CoerceUTF8(), nullable=False),
+    sa.Column('website', residue.CoerceUTF8(), nullable=False),
+    sa.Column('special_needs', residue.CoerceUTF8(), nullable=False),
     sa.Column('status', sa.Integer(), server_default='172070601', nullable=False),
-    sa.Column('admin_notes', sideboard.lib.sa.CoerceUTF8(), nullable=False),
+    sa.Column('admin_notes', residue.CoerceUTF8(), nullable=False),
     sa.Column('base_price', sa.Integer(), server_default='0', nullable=False),
     sa.Column('overridden_price', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['attendee_id'], ['attendee.id'], name=op.f('fk_art_show_application_attendee_id_attendee'), ondelete='SET NULL'),

@@ -1,5 +1,6 @@
-from . import *
-from uber.model_checks import ignore_unassigned_and_placeholders
+from .models import ArtShowApplication
+from uber.decorators import prereg_validation, validation
+from uber.config import c
 
 
 ArtShowApplication.required = [('description', 'Description')]
@@ -9,6 +10,7 @@ ArtShowApplication.required = [('description', 'Description')]
 def max_panels(app):
     if app.panels > c.MAX_ART_PANELS:
         return 'You cannot have more than {} panels.'.format(c.MAX_ART_PANELS)
+
 
 @prereg_validation.ArtShowApplication
 def min_panels(app):
@@ -21,6 +23,7 @@ def max_tables(app):
     if app.tables > c.MAX_ART_TABLES:
         return 'You cannot have more than {} tables.'.format(c.MAX_ART_TABLES)
 
+
 @prereg_validation.ArtShowApplication
 def min_tables(app):
     if app.tables < 0:
@@ -30,7 +33,8 @@ def min_tables(app):
 @validation.ArtShowApplication
 def need_some_space(app):
     if not app.panels and not app.tables:
-        return 'Please select how many panels and/or tables to include on this application.'
+        return 'Please select how many panels and/or tables to include' \
+               ' on this application.'
 
 
 @validation.ArtShowApplication
@@ -39,5 +43,6 @@ def discounted_price(app):
         cost = int(float(app.overridden_price if app.overridden_price else 0))
         if cost < 0:
             return 'Overridden Price must be a number that is 0 or higher.'
-    except:
-        return "What you entered for Overridden Price ({}) isn't even a number".format(app.overridden_price)
+    except Exception:
+        return "What you entered for Overridden Price ({}) " \
+               "isn't even a number".format(app.overridden_price)
