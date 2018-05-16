@@ -25,6 +25,12 @@ class Root:
         if cherrypy.request.method == 'POST':
             attendee, message = session.attendee_from_art_show_app(**params)
 
+            # We do an extra check here to handle new attendees
+            if attendee and attendee.badge_status == c.NOT_ATTENDING \
+                    and app.delivery_method == c.BRINGING_IN:
+                message = 'You cannot bring your own art ' \
+                          'if you are not attending.'
+
             message = message or check(attendee) or check(app, prereg=True)
             if not message:
                 if c.AFTER_ART_SHOW_WAITLIST:
@@ -74,6 +80,8 @@ class Root:
                            {'app': app}), model=app)
                 raise HTTPRedirect('edit?id={}&message={}', app.id,
                                    'Your application has been updated')
+            else:
+                session.rollback()
 
         return {
             'message': message,

@@ -15,6 +15,19 @@
 </div>
 
 <div class="form-group">
+  <label for="delivery_method" class="col-sm-3 control-label">Art Delivery</label>
+  <div class="col-sm-6">
+    <select name="delivery_method" class="form-control">
+      {{ options(c.ART_SHOW_DELIVERY_OPTS,app.delivery_method) }}
+    </select>
+  </div>
+  {% if not no_help_text %}
+  <div class="clearfix"></div>
+  <p class="help-block col-sm-6 col-sm-offset-3">Mailing your art to the show incurs a fee of ${{ c.ART_MAILING_FEE }}.</p>
+  {% endif %}
+</div>
+
+<div class="form-group">
   <label for="panels" class="col-sm-3 control-label">Panels</label>
   <div class="col-sm-6">
     {% if app.panels and app.panels > max_panels and not admin_area %}

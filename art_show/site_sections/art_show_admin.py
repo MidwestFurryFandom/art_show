@@ -47,7 +47,7 @@ class Root:
             'app': app,
             'attendee': attendee,
             'attendee_id': app.attendee_id or params.get('attendee_id', ''),
-            'all_attendees': session.all_attendees_opts(),
+            'all_attendees': session.all_attendees(),
             'new_app': new_app
         }
 

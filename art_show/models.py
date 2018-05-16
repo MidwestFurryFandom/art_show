@@ -61,8 +61,9 @@ class ArtShowApplication(MagModel):
     website = Column(UnicodeText)
     special_needs = Column(UnicodeText)
     status = Column(Choice(c.ART_SHOW_STATUS_OPTS), default=c.UNAPPROVED)
+    delivery_method = Column(Choice(c.ART_SHOW_DELIVERY_OPTS), default=c.BRINGING_IN)
     admin_notes = Column(UnicodeText, admin_only=True)
-
+    agent_name = Column(UnicodeText)
     base_price = Column(Integer, default=0, admin_only=True)
     overridden_price = Column(Integer, nullable=True, admin_only=True)
 
@@ -100,6 +101,10 @@ class ArtShowApplication(MagModel):
     @cost_property
     def tables_cost(self):
         return self.tables * c.COST_PER_TABLE
+
+    @cost_property
+    def mailing_fee(self):
+        return c.ART_MAILING_FEE if self.delivery_method == c.BY_MAIL else 0
 
     @property
     def is_unpaid(self):

@@ -31,6 +31,13 @@ def min_tables(app):
 
 
 @validation.ArtShowApplication
+def cant_ghost_art_show(app):
+    if app.attendee and app.delivery_method == c.BRINGING_IN \
+            and app.attendee.badge_status == c.NOT_ATTENDING:
+        return 'You cannot bring your own art if you are not attending.'
+
+
+@validation.ArtShowApplication
 def need_some_space(app):
     if not app.panels and not app.tables:
         return 'Please select how many panels and/or tables to include' \
