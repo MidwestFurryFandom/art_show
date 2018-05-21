@@ -67,17 +67,21 @@ class Root:
     def edit(self, session, message='', **params):
         app = session.art_show_application(params, restricted=True,
                                            ignore_csrf=True)
+        if 'id' not in params:
+            message = 'Invalid art show application ID. ' \
+                      'Please try going back in your browser.'
 
         if cherrypy.request.method == 'POST':
             message = check(app, prereg=True)
             if not message:
                 session.add(app)
-                send_email(
+                send_email.delay(
                     c.ART_SHOW_EMAIL,
                     app.email,
                     'Art Show Application Updated',
                     render('emails/art_show/appchange_notification.html',
-                           {'app': app}), model=app)
+                           {'app': app}, encoding=None),
+                    model=app.to_dict('id'))
                 raise HTTPRedirect('edit?id={}&message={}', app.id,
                                    'Your application has been updated')
             else:
@@ -92,6 +96,60 @@ class Root:
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
 
+    def new_agent(self, session, id):
+        app = session.art_show_application(id)
+        promo_code = session.promo_code(code=app.agent_code)
+        message = 'Agent code updated'
+
+        app.agent_code = app.new_agent_code()
+        session.delete(promo_code)
+        if app.agent:
+            message='Agent removed and code updated'
+            send_email.delay(
+                c.ART_SHOW_EMAIL,
+                [app.agent.email, app.attendee.email],
+                '{} Art Show Agent Removed'.format(c.EVENT_NAME),
+                render('emails/art_show/agent_removed.html',
+                       {'app': app},
+                       encoding=None),
+                model=app.to_dict('id'))
+            app.agent_id = None
+
+        send_email.delay(
+            c.ART_SHOW_EMAIL,
+            app.attendee.email,
+            'New Agent Code for the {} Art Show'.format(c.EVENT_NAME),
+            render('emails/art_show/agent_code.html',
+                   {'app': app},
+                   encoding=None),
+            'html',
+            model=app.to_dict('id'))
+
+        raise HTTPRedirect('edit?id={}&message={}',
+                           app.id, message)
+
+    def new_agent_app(self, session, id, **params):
+        agent = session.attendee(id)
+
+        if not params['agent_code']:
+            message = 'Please enter an agent code.'
+        else:
+            message = check(agent)
+
+        if not message:
+            message = 'That application already has an agent.'
+
+            matching_apps = session.lookup_agent_code(params['agent_code'])
+            for app in matching_apps:
+                if not app.agent:
+                    app.agent = agent
+                    name = app.artist_name or app.attendee.full_name
+                    message = 'You are now an agent for {}.'\
+                        .format(name)
+
+        raise HTTPRedirect('../preregistration/confirm?id={}&message={}',
+                           id, message)
+
     @credit_card
     def process_art_show_payment(self, session, payment_id, stripeToken):
         charge = Charge.get(payment_id)
@@ -105,13 +163,13 @@ class Root:
         else:
             attendee.amount_paid += charge.dollar_amount
             session.add(attendee)
-            send_email(
+            send_email.delay(
                 c.ART_SHOW_EMAIL,
                 c.ART_SHOW_EMAIL,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_notification.txt',
                        {'app': app}), model=app)
-            send_email(
+            send_email.delay(
                 c.ART_SHOW_EMAIL,
                 app.email,
                 'Art Show Payment Received',

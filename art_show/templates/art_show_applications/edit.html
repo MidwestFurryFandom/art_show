@@ -24,6 +24,7 @@
       Unfortunately, since your application has been {{ app.status_label|lower }}, you may no longer edit it. However,
       you may still view the details of your application below. <br/><br/>
       {% endif %}
+    <form method="post" id="new_agent" action="new_agent" role="form"></form>
     <form method="post" action="edit" class="form-horizontal" role="form">
       <input type="hidden" name="id" value="{{ app.id }}">
 
