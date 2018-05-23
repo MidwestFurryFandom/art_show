@@ -80,7 +80,7 @@ class Root:
                     app.email,
                     'Art Show Application Updated',
                     render('emails/art_show/appchange_notification.html',
-                           {'app': app}), 'html'),
+                           {'app': app}, 'html'),
                     model=app.to_dict('id'))
                 raise HTTPRedirect('edit?id={}&message={}', app.id,
                                    'Your application has been updated')
@@ -110,7 +110,7 @@ class Root:
                 [app.agent.email, app.attendee.email],
                 '{} Art Show Agent Removed'.format(c.EVENT_NAME),
                 render('emails/art_show/agent_removed.html',
-                       {'app': app}), 'html',
+                       {'app': app}, 'html',
                        encoding=None),
                 model=app.to_dict('id'))
             app.agent_id = None
@@ -120,9 +120,8 @@ class Root:
             app.attendee.email,
             'New Agent Code for the {} Art Show'.format(c.EVENT_NAME),
             render('emails/art_show/agent_code.html',
-                   {'app': app}), 'html',
+                   {'app': app}, 'html',
                    encoding=None),
-            'html',
             model=app.to_dict('id'))
 
         raise HTTPRedirect('edit?id={}&message={}',
@@ -168,13 +167,15 @@ class Root:
                 c.ART_SHOW_EMAIL,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_notification.txt',
-                       {'app': app}), model=app)
+                       {'app': app}), 
+                model=app)
             send_email.delay(
                 c.ART_SHOW_EMAIL,
                 app.email,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_confirmation.txt',
-                       {'app': app}), model=app)
+                       {'app': app}), 
+                model=app)
             raise HTTPRedirect('edit?id={}&message={}',
                                attendee.art_show_application.id,
                                'Your payment has been accepted!')
