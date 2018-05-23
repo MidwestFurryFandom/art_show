@@ -167,3 +167,11 @@ class Attendee:
             for app in self.art_show_applications:
                 cost += app.total_cost
         return cost
+
+    @property
+    def full_address(self):
+        if self.country and self.city \
+                and (self.region
+                     or self.country not in ['United States', 'Canada']) \
+                and self.address1:
+            return True
