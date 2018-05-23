@@ -1,0 +1,7 @@
+{% extends "preregistration/confirm.html" %}
+{% block panel_top %}
+  {{ super() }}
+  {% if not attendee.is_new %}
+    {% include 'art_show_agent.html' %}
+  {% endif %}
+{% endblock %}
