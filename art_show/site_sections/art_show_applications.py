@@ -80,7 +80,7 @@ class Root:
                     app.email,
                     'Art Show Application Updated',
                     render('emails/art_show/appchange_notification.html',
-                           {'app': app}, encoding=None),
+                           {'app': app}), 'html'),
                     model=app.to_dict('id'))
                 raise HTTPRedirect('edit?id={}&message={}', app.id,
                                    'Your application has been updated')
@@ -110,7 +110,7 @@ class Root:
                 [app.agent.email, app.attendee.email],
                 '{} Art Show Agent Removed'.format(c.EVENT_NAME),
                 render('emails/art_show/agent_removed.html',
-                       {'app': app},
+                       {'app': app}), 'html',
                        encoding=None),
                 model=app.to_dict('id'))
             app.agent_id = None
@@ -120,7 +120,7 @@ class Root:
             app.attendee.email,
             'New Agent Code for the {} Art Show'.format(c.EVENT_NAME),
             render('emails/art_show/agent_code.html',
-                   {'app': app},
+                   {'app': app}), 'html',
                    encoding=None),
             'html',
             model=app.to_dict('id'))
