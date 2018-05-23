@@ -96,6 +96,32 @@ class Root:
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
 
+    def mailing_address(self, session, id, message='', **params):
+        app = session.art_show_application(id)
+
+        attendee = app.attendee
+        attendee.apply(params, restricted=True)
+        from uber.model_checks import _invalid_zip_code
+
+        if not attendee.address1:
+            message = 'Please enter a street address.'
+        if not attendee.city:
+            message = 'Please enter a city.'
+        if not attendee.region and attendee.country in ['United States', 'Canada']:
+            message = 'Please enter a state, province, or region.'
+        if not attendee.country:
+            message = 'Please enter a country.'
+        if not attendee.international and not c.AT_OR_POST_CON:
+            if _invalid_zip_code(attendee.zip_code):
+                message = 'Enter a valid zip code'
+
+        if message:
+            session.rollback()
+        else:
+            message = 'Mailing address updated.'
+
+        raise HTTPRedirect('edit?id={}&message={}', app.id, message)
+
     def new_agent(self, session, id):
         app = session.art_show_application(id)
         promo_code = session.promo_code(code=app.agent_code)
@@ -165,15 +191,13 @@ class Root:
                 c.ART_SHOW_EMAIL,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_notification.txt',
-                       {'app': app}), 
-                model=app)
+                       {'app': app}), model=app)
             send_email.delay(
                 c.ART_SHOW_EMAIL,
                 app.email,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_confirmation.txt',
-                       {'app': app}), 
-                model=app)
+                       {'app': app}), model=app)
             raise HTTPRedirect('edit?id={}&message={}',
                                attendee.art_show_application.id,
                                'Your payment has been accepted!')
