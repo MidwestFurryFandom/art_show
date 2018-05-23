@@ -178,26 +178,29 @@ class Root:
         charge = Charge.get(payment_id)
         [attendee] = charge.attendees
         attendee = session.merge(attendee)
-        app = attendee.art_show_application
-        message = charge.charge_cc(session, stripeToken)
-        if message:
-            raise HTTPRedirect('edit?id={}&message={}',
-                               attendee.art_show_application.id, message)
-        else:
-            attendee.amount_paid += charge.dollar_amount
+        apps = attendee.art_show_applications
+        for app in apps:
+            message = charge.charge_cc(session, stripeToken)
+            if message:
+                raise HTTPRedirect('edit?id={}&message={}',
+                                   app.id, message)
+            else:
+                attendee.amount_paid += charge.dollar_amount
             session.add(attendee)
             send_email.delay(
                 c.ART_SHOW_EMAIL,
                 c.ART_SHOW_EMAIL,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_notification.txt',
-                       {'app': app}), model=app)
+                       {'app': app}, encoding=None),
+                model=app.to_dict('id'))
             send_email.delay(
                 c.ART_SHOW_EMAIL,
                 app.email,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_confirmation.txt',
-                       {'app': app}), model=app)
+                       {'app': app}, encoding=None),
+                model=app.to_dict('id'))
             raise HTTPRedirect('edit?id={}&message={}',
-                               attendee.art_show_application.id,
+                               app.id,
                                'Your payment has been accepted!')
