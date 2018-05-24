@@ -40,7 +40,7 @@ class SessionMixin:
             if attendee.badge_status in [c.INVALID_STATUS, c.WATCHED_STATUS]:
                 return None, \
                        'This badge is invalid. Please contact registration.'
-            elif attendee.art_show_application:
+            elif attendee.art_show_applications:
                 return None, \
                        'There is already an art show application ' \
                        'for that badge!'

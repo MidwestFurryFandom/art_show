@@ -37,7 +37,7 @@ class Root:
                     app.status = c.WAITLISTED
                 session.add(attendee)
                 app.attendee = attendee
-                attendee.art_show_application = app
+
                 session.add(app)
                 send_email(
                     c.ART_SHOW_EMAIL,
