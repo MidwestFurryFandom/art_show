@@ -14,6 +14,10 @@ class Root:
                                            ignore_csrf=True)
         attendee = None
 
+        if not c.ART_SHOW_OPEN:
+            return render('static_views/art_show_closed.html') if c.AFTER_ART_SHOW_DEADLINE \
+                else render('static_views/art_show_not_open.html')
+
         if cherrypy.request.method == 'GET' and params.get('attendee_id', ''):
             try:
                 attendee = session.attendee(id=params['attendee_id'])

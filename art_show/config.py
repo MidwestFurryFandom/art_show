@@ -1,6 +1,6 @@
 from sideboard.lib import parse_config
 
-from uber.config import c
+from uber.config import c, Config
 from uber.menu import MenuItem
 
 config = parse_config(__file__)
@@ -19,3 +19,10 @@ c.MENU.append_menu_item(MenuItem(name='Art Show', access=c.ART_SHOW, submenu=[
     MenuItem(name='Sales Charge Form',
              href='../art_show_admin/sales_charge_form'),
                                  ]))
+
+
+@Config.mixin
+class ExtraConfig:
+    @property
+    def ART_SHOW_OPEN(self):
+        return self.AFTER_ART_SHOW_REG_START and self.BEFORE_ART_SHOW_DEADLINE
