@@ -15,6 +15,37 @@
 </div>
 
 <div class="form-group">
+  <label for="delivery_method" class="col-sm-3 control-label">Art Delivery</label>
+  <div class="col-sm-6">
+    <select name="delivery_method" class="form-control"{{ readonly }}>
+      {{ options(c.ART_SHOW_DELIVERY_OPTS,app.delivery_method) }}
+    </select>
+  </div>
+  {% if not no_help_text %}
+  <div class="clearfix"></div>
+  <p class="help-block col-sm-6 col-sm-offset-3">Mailing your art to the show incurs a fee of ${{ c.ART_MAILING_FEE }}.</p>
+  {% endif %}
+</div>
+
+{% if app.agent_code %}
+<div class="form-group">
+  <label for="agent_code" class="col-sm-3 control-label">Agent</label>
+  <div class="col-sm-6">
+    {% if app.agent %}
+      {{ app.agent.full_name }} is currently assigned as your agent.
+    {% else %}
+    Your art show application does not have an agent assigned. Your agent code
+    is <strong>{{ app.agent_code }}</strong>. Your agent
+    can enter this code while preregistering for {{ c.EVENT_NAME }}, or after
+    registering by using their registration confirmation link.
+    {% endif %}
+    <input type="hidden" name="id" form="new_agent" value="{{ app.id }}" />
+    <br/><button type="submit" form="new_agent" class="btn btn-primary">Assign New Agent</button>
+  </div>
+</div>
+{% endif %}
+
+<div class="form-group">
   <label for="panels" class="col-sm-3 control-label">Panels</label>
   <div class="col-sm-6">
     {% if app.panels and app.panels > max_panels and not admin_area %}
