@@ -17,6 +17,8 @@
     <th>Status</th>
     <th>Panels</th>
     <th>Tables</th>
+    <th>Adult Panels</th>
+    <th>Adult Tables</th>
     <th>Art Show Cost</th>
     <th>Paid</th>
     <th>Admin Notes</th>
@@ -27,6 +29,8 @@
         <td>{{ app.status_label }}</td>
         <td>{{ app.panels }}</td>
         <td>{{ app.tables }}</td>
+        <td>{{ app.panels_ad }}</td>
+        <td>{{ app.tables_ad }}</td>
         <td>${{ app.potential_cost }}</td>
         <td>{% if app.status == c.APPROVED %}{{ app.is_unpaid|yesno('No,Yes') }}
             {% else %}N/A ({{ app.status_label }}){% endif %}</td>

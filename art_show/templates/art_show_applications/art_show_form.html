@@ -63,8 +63,6 @@
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
         than {{ c.MAX_ART_PANELS }} panels.</i></p>
     {% endif %}
-
-
 </div>
 
 <div class="form-group">
@@ -81,6 +79,47 @@
     {% endif %}
     </div>
     {% if not no_help_text and app.tables < max_tables %}
+    <div class="clearfix"></div>
+    <p class="help-block col-sm-6 col-sm-offset-3">
+      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+        than {{ c.MAX_ART_TABLES }} table sections.</i></p>
+    {% endif %}
+</div>
+
+<div class="form-group">
+  <label for="panels" class="col-sm-3 control-label">Adult Panels</label>
+  <div class="col-sm-6">
+    {% if app.panels_ad and app.panels_ad > max_panels and not admin_area %}
+      <div class="form-control-static">An admin has granted you {{ app.panels_ad }} panels in our mature area. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      if you wish to change the number of panels on your application.</div>
+    {% else %}
+      <select class="form-control" name="panels_ad"{{ readonly }}>
+        {{ int_options(0, max_panels, app.panels_ad) }}
+      </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
+      {% endif %}
+    </div>
+    {% if not no_help_text and app.panels_ad < max_panels %}
+    <div class="clearfix"></div>
+    <p class="help-block col-sm-6 col-sm-offset-3">
+      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
+        than {{ c.MAX_ART_PANELS }} panels.</i></p>
+    {% endif %}
+</div>
+
+<div class="form-group">
+  <label for="tables" class="col-sm-3 control-label">Adult Table Sections</label>
+  <div class="col-sm-6">
+    {% if app.tables_ad and app.tables_ad > max_tables and not admin_area %}
+      <div class="form-control-static">An admin has granted you {{ app.tables_ad }} table sections in our mature area. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      if you wish to change the number of table sections on your application.</div>
+    {% else %}
+      <select class="form-control" name="tables_ad"{{ readonly }}>
+        {{ int_options(0, max_tables, app.tables_ad) }}
+      </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table section){% endif %}
+
+    {% endif %}
+    </div>
+    {% if not no_help_text and app.tables_ad < max_tables %}
     <div class="clearfix"></div>
     <p class="help-block col-sm-6 col-sm-offset-3">
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
