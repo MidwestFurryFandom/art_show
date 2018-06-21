@@ -22,6 +22,13 @@ class ArtShowAppEmailFixture(AutomatedEmailFixture):
 
 
 ArtShowAppEmailFixture(
+    '{EVENT_NAME} Art Show Application Confirmation',
+    'art_show/application.html',
+    lambda a: a.status == c.UNAPPROVED,
+    needs_approval=False,
+    ident='art_show_confirm')
+
+ArtShowAppEmailFixture(
     'Your {EVENT_NAME} Art Show application has been approved',
     'art_show/approved.html',
     lambda a: a.status == c.APPROVED,
