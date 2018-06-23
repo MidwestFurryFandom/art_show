@@ -9,7 +9,9 @@
     {% else %}Thanks for applying for the Art Show!{% endif %}</h2>
 
   We've received your application for the {{ c.EVENT_NAME }} Art Show. You applied for {{ app.panels }}
-  panel{{ app.panels|pluralize }} and {{ app.tables }} table{{ app.tables|pluralize }}.
+  panel{{ app.panels|pluralize }} and {{ app.tables }} table{{ app.tables|pluralize }} in our general area,
+  and {{ app.panels_ad }} panel{{ app.panels_ad|pluralize }} and {{ app.tables_ad }} table{{ app.tables_ad|pluralize }}
+  in our mature area.
 
   {% if app.attendee.badge_status == c.NEW_STATUS %}
   <br/><br/>We've created a badge for you based on your information. You may complete your registration
