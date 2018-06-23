@@ -73,7 +73,9 @@ class ArtShowApplication(MagModel):
     agent_code = Column(UnicodeText)
     artist_name = Column(UnicodeText)
     panels = Column(Integer, default=0)
+    panels_ad = Column(Integer, default=0)
     tables = Column(Integer, default=0)
+    tables_ad = Column(Integer, default=0)
     description = Column(UnicodeText)
     website = Column(UnicodeText)
     special_needs = Column(UnicodeText)
@@ -135,6 +137,14 @@ class ArtShowApplication(MagModel):
     @cost_property
     def tables_cost(self):
         return self.tables * c.COST_PER_TABLE
+
+    @cost_property
+    def panels_ad_cost(self):
+        return self.panels_ad * c.COST_PER_PANEL
+
+    @cost_property
+    def tables_ad_cost(self):
+        return self.tables_ad * c.COST_PER_TABLE
 
     @cost_property
     def mailing_fee(self):
