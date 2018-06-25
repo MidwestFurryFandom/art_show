@@ -111,7 +111,6 @@ class ArtShowApplication(MagModel):
         return new_agent_code
 
 
-
     @property
     def total_cost(self):
         if self.status != c.APPROVED:

@@ -45,13 +45,6 @@ class Root:
                 session.add(app)
                 send_email(
                     c.ART_SHOW_EMAIL,
-                    app.email,
-                    'Art Show Application Received',
-                    render('emails/art_show/application.html',
-                           {'app': app}, encoding=None), 'html',
-                    model=app)
-                send_email(
-                    c.ART_SHOW_EMAIL,
                     c.ART_SHOW_EMAIL,
                     'Art Show Application Received',
                     render('emails/art_show/reg_notification.txt',

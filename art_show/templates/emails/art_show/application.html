@@ -6,20 +6,6 @@ You have successfully submitted an application for the Art Show for {{ c.EVENT_N
 this coming {{ event_dates() }}. Below is a copy of your application. You may
 <a href="{{ c.URL_BASE }}/art_show_applications/edit?id={{ app.id }}">update it here</a>.
 
-<br/><br/>Should your application be approved, you will be required to pay for your space to complete your reservation.
-{% if app.attendee.badge_status == c.NEW_STATUS %}
-You MUST complete your {{ c.EVENT_NAME }} registration before you will be able to pay for your art show space. You
-may complete your registration
-<a href="{{ c.URL_BASE }}//preregistration/confirm?id={{ app.attendee_id }}">here</a>.
-{% endif %}
-
-{% if app.agent_code %}
-<br/><br/>In order to assign an agent to your art application, please send them
-this code: <strong>{{ app.agent_code }}</strong>. They must then add the code
-to their registration, either while signing up or afterwards by using the
-confirmation link they receive by email when they register.
-{% endif %}
-
 <ul>
     {% if app.artist_name %}<li><strong>Artist Name</strong>: {{ app.artist_name }}</li>{% endif %}
     <li><strong>General Panels</strong>: {{ app.panels }} panels (${{ app.panels_cost }}) </li>
@@ -35,6 +21,21 @@ confirmation link they receive by email when they register.
     <li><strong>Website URL</strong>: {{ app.website }}</li>
 </ul>
 
+Should your application be approved, you will be required to pay for your space to complete your reservation.
+{% if app.attendee.badge_status == c.NEW_STATUS %}
+You MUST complete your {{ c.EVENT_NAME }} registration before you will be able to pay for your art show space. You
+may complete your registration
+<a href="{{ c.URL_BASE }}//preregistration/confirm?id={{ app.attendee_id }}">here</a>.
+{% endif %}
+
+{% if app.agent_code %}
+<br/><br/>In order to assign an agent to your art application, please send them
+this code: <strong>{{ app.agent_code }}</strong>. They must then add the code
+to their registration, either while signing up or afterwards by using the
+confirmation link they receive by email when they register.
+{% endif %}
+
+<br/><br/>
 {% if c.AFTER_ART_SHOW_WAITLIST %}
     Because our art show is currently full, your submission has been automatically placed on our waitlist.  We'll let
     you know if your application is later approved.
