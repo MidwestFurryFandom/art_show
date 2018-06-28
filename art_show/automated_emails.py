@@ -22,24 +22,27 @@ class ArtShowAppEmailFixture(AutomatedEmailFixture):
 
 
 ArtShowAppEmailFixture(
+    '{EVENT_NAME} Art Show Application Confirmation',
+    'art_show/application.html',
+    lambda a: a.status == c.UNAPPROVED,
+    ident='art_show_confirm')
+
+ArtShowAppEmailFixture(
     'Your {EVENT_NAME} Art Show application has been approved',
     'art_show/approved.html',
     lambda a: a.status == c.APPROVED,
-    needs_approval=False,
     ident='art_show_approved')
 
 ArtShowAppEmailFixture(
     'Your {EVENT_NAME} Art Show application has been waitlisted',
     'art_show/waitlisted.txt',
     lambda a: a.status == c.WAITLISTED,
-    needs_approval=False,
     ident='art_show_waitlisted')
 
 ArtShowAppEmailFixture(
     'Your {EVENT_NAME} Art Show application has been declined',
     'art_show/declined.txt',
     lambda a: a.status == c.DECLINED,
-    needs_approval=False,
     ident='art_show_declined')
 
 ArtShowAppEmailFixture(
@@ -47,5 +50,4 @@ ArtShowAppEmailFixture(
     'art_show/payment_reminder.txt',
     lambda a: a.status == c.APPROVED and a.is_unpaid,
     when=days_before(14, c.ART_SHOW_PAYMENT_DUE),
-    needs_approval=False,
     ident='art_show_payment_reminder')

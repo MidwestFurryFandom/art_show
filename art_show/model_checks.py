@@ -4,7 +4,7 @@ from uber.config import c
 from uber.models import Session
 
 
-ArtShowApplication.required = [('description', 'Description')]
+ArtShowApplication.required = [('description', 'Description'),('website','Website URL')]
 
 
 @prereg_validation.ArtShowApplication
