@@ -27,7 +27,7 @@
   {% endif %}
 </div>
 
-{% if app.agent_code %}
+{% if app.agent_code and app.delivery_method == c.AGENT %}
 <div class="form-group">
   <label for="agent_code" class="col-sm-3 control-label">Agent</label>
   <div class="col-sm-6">
@@ -139,7 +139,7 @@
 </div>
 
 <div class="form-group">
-  <label for="website" class="col-sm-3 control-label optional-field">Website URL</label>
+  <label for="website" class="col-sm-3 control-label">Website URL</label>
   <div class="col-sm-6">
     <input class="form-control" type="text" name="website" value="{{ app.website }}" size="40" {{ readonly }}/>
   </div>
