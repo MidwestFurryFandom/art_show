@@ -79,6 +79,7 @@ class Root:
             message = check(app, prereg=True)
             if not message:
                 session.add(app)
+                session.commit() # Update total price
                 send_email.delay(
                     c.ART_SHOW_EMAIL,
                     app.email,
