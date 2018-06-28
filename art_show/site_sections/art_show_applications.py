@@ -72,6 +72,7 @@ class Root:
             message = check(app, prereg=True)
             if not message:
                 session.add(app)
+                session.commit() # Make sure we update the DB or the email will be wrong!
                 send_email.delay(
                     c.ART_SHOW_EMAIL,
                     app.email,
