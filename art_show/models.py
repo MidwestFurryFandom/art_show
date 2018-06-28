@@ -113,7 +113,7 @@ class ArtShowApplication(MagModel):
     @property
     def incomplete_reason(self):
         if self.status != c.APPROVED:
-            return "Not approved"
+            return self.status_label
         if self.delivery_method == c.BY_MAIL \
                 and not self.attendee.full_address:
             return "Mailing address required"
