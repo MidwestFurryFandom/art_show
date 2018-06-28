@@ -151,7 +151,7 @@ class Root:
             'New Agent Code for the {} Art Show'.format(c.EVENT_NAME),
             render('emails/art_show/agent_code.html',
                    {'app': app}, encoding=None), 'html',
-            model=app.to_dict('id'))f
+            model=app.to_dict('id'))
 
         raise HTTPRedirect('edit?id={}&message={}',
                            app.id, message)
