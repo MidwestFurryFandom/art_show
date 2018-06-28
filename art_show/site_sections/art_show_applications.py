@@ -119,10 +119,11 @@ class Root:
 
         raise HTTPRedirect('edit?id={}&message={}', app.id, message)
 
-    def new_agent(self, session, id):
-        app = session.art_show_application(id)
+    def new_agent(self, session, **params):
+        app = session.art_show_application(params['id'])
         promo_code = session.promo_code(code=app.agent_code)
         message = 'Agent code updated'
+        page = "edit" if 'admin' not in params else "../art_show_admin/form"
 
         app.agent_code = app.new_agent_code()
         session.delete(promo_code)
@@ -145,8 +146,8 @@ class Root:
                    {'app': app}, encoding=None), 'html',
             model=app.to_dict('id'))
 
-        raise HTTPRedirect('edit?id={}&message={}',
-                           app.id, message)
+        raise HTTPRedirect('{}?id={}&message={}',
+                           page, app.id, message)
 
     def new_agent_app(self, session, id, **params):
         agent = session.attendee(id)
