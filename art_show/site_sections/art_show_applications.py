@@ -79,7 +79,7 @@ class Root:
             message = check(app, prereg=True)
             if not message:
                 session.add(app)
-                session.commit() # Update total price
+                session.commit() # Make sure we update the DB or the email will be wrong!
                 send_email.delay(
                     c.ART_SHOW_EMAIL,
                     app.email,
@@ -151,7 +151,7 @@ class Root:
             'New Agent Code for the {} Art Show'.format(c.EVENT_NAME),
             render('emails/art_show/agent_code.html',
                    {'app': app}, encoding=None), 'html',
-            model=app.to_dict('id'))
+            model=app.to_dict('id'))f
 
         raise HTTPRedirect('edit?id={}&message={}',
                            app.id, message)
