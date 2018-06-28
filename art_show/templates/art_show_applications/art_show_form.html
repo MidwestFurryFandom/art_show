@@ -27,7 +27,7 @@
   {% endif %}
 </div>
 
-{% if app.agent_code %}
+{% if app.agent_code and app.delivery_method == c.AGENT %}
 <div class="form-group">
   <label for="agent_code" class="col-sm-3 control-label">Agent</label>
   <div class="col-sm-6">
