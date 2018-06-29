@@ -4,7 +4,7 @@ from uber.config import c
 from uber.models import Session
 
 
-ArtShowApplication.required = [('description', 'Description')]
+ArtShowApplication.required = [('description', 'Description'),('website','Website URL')]
 
 
 @prereg_validation.ArtShowApplication
@@ -40,7 +40,8 @@ def cant_ghost_art_show(app):
 
 @validation.ArtShowApplication
 def need_some_space(app):
-    if not app.panels and not app.tables:
+    if not app.panels and not app.tables \
+            and not app.panels_ad and not app.tables_ad:
         return 'Please select how many panels and/or tables to include' \
                ' on this application.'
 

@@ -110,7 +110,15 @@ class ArtShowApplication(MagModel):
 
         return new_agent_code
 
-
+    @property
+    def incomplete_reason(self):
+        if self.status != c.APPROVED:
+            return self.status_label
+        if self.delivery_method == c.BY_MAIL \
+                and not self.attendee.full_address:
+            return "Mailing address required"
+        if self.attendee.badge_status == c.NEW_STATUS:
+            return "Missing registration info"
 
     @property
     def total_cost(self):
