@@ -33,7 +33,7 @@
         <td>{{ app.tables_ad }}</td>
         <td>${{ app.potential_cost }}</td>
         <td>{% if app.status == c.APPROVED %}{{ app.is_unpaid|yesno('No,Yes') }}
-            {% else %}N/A ({{ app.status_label }}){% endif %}</td>
+            {% else %}N/A ({{ app.incomplete_reason }}){% endif %}</td>
         <td>{{ app.admin_notes }}</td>
     </tr>
 {% endfor %}
