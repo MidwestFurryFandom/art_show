@@ -8,9 +8,12 @@
   <li class="active">Admin</li>
 </ol>
 
-<div class="panel panel-default">
+<a class="btn btn-default" href="form?new_app=True">Add an application</a>
 
-    <a class="btn btn-default" href="form?new_app=True">Add an application</a>
+<div class="panel panel-default">
+<h4>Filters</h4>
+    <strong>Status: </strong><span id="status_filter"></span>
+    <br/><strong>Paid: </strong><span id="paid_filter"></span>
 <table class="table table-striped datatable">
 <thead><tr>
     <th>Name</th>
