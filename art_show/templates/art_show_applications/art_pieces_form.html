@@ -49,9 +49,9 @@
               <label class="col-sm-3 control-label">
                 Print Number
               </label>
-              <div class="col-sm-2"><input class="form-control" type="number" step="1" name="print_run_num" placeholder="X" /></div>
+              <div class="col-sm-2"><input class="form-control" type="number" step="1" min="1" name="print_run_num" placeholder="X" /></div>
               <div class="col-sm-1"><p class="form-control-static text-center">OF</p></div>
-              <div class="col-sm-3"><input class="form-control" type="number" step="1" name="print_run_total" placeholder="Y" /></div>
+              <div class="col-sm-3"><input class="form-control" type="number" step="1" min="1" name="print_run_total" placeholder="Y" /></div>
             </div>
           </div>
         </div>
@@ -62,7 +62,7 @@
             <div class="col-sm-6">
               <div class="input-group">
                 <span class="input-group-addon">$</span>
-                <input type="number" step="1" class="form-control" name="opening_bid" value="{{ piece.opening_bid }}" autocomplete="off" />
+                <input type="number" step="1" min="1" class="form-control" name="opening_bid" value="{{ piece.opening_bid }}" autocomplete="off" />
               </div>
             </div>
           </div>
@@ -72,7 +72,7 @@
             <div class="col-sm-6">
               <div class="input-group">
                 <span class="input-group-addon">$</span>
-                <input type="number" step="1" class="form-control" name="quick_sale_price" value="{{ piece.quick_sale_price }}" autocomplete="off" />
+                <input type="number" step="1" min="0" class="form-control" name="quick_sale_price" value="{{ piece.quick_sale_price }}" autocomplete="off" />
               </div>
               <label class="optional-field checkbox-label">
                 <input type="checkbox" name="no_quick_sale" value="1"{% if real_piece.no_quick_sale %} checked{% endif %} />
@@ -181,11 +181,17 @@
     };
 
     var togglePriceBox = function (enable, disable_or_starting_status, form_group, input_name) {
-        form_group.find('input[name='+input_name+']').prop('readonly', disable_or_starting_status).prop('required', !disable_or_starting_status).attr('placeholder', function() {
-            if (enable) {
-                return 'Please use whole dollars only'
+        form_group.find('input[name='+input_name+']').prop('readonly', disable_or_starting_status).prop('required', !disable_or_starting_status).attr('min', function(){
+            if (!disable_or_starting_status) {
+                return '1';
             } else {
-                return 'N/A'
+                return '0';
+            }
+        }).attr('placeholder', function() {
+            if (enable) {
+                return 'Please use whole dollars only';
+            } else {
+                return 'N/A';
             }
         });
     };
