@@ -1,8 +1,3 @@
-import random
-import re
-import string
-import textwrap
-
 from uber.config import c
 from uber.models import Session
 from uber.models import MagModel
@@ -12,7 +7,7 @@ from uber.models.types import Choice, DefaultColumn as Column,\
 
 from residue import CoerceUTF8 as UnicodeText, UUID
 from sqlalchemy.orm import backref
-from sqlalchemy.types import Integer
+from sqlalchemy.types import Integer, Boolean
 from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import ForeignKey, Index
 
@@ -161,6 +156,41 @@ class ArtShowApplication(MagModel):
     @property
     def is_unpaid(self):
         return self.attendee.amount_unpaid > 0
+
+    @property
+    def highest_piece_id(self):
+        if len(self.art_show_pieces) > 1:
+            return sorted([piece for piece in self.art_show_pieces if piece.piece_id], key=lambda piece: piece.piece_id, reverse=True)[0].piece_id
+        else:
+            return 0
+
+
+class ArtShowPiece(MagModel):
+    app_id = Column(UUID, ForeignKey('art_show_application.id',
+                                     ondelete='SET NULL'), nullable=True)
+    app = relationship('ArtShowApplication', foreign_keys=app_id,
+                         cascade='save-update, merge',
+                         backref=backref('art_show_pieces',
+                                         cascade='save-update, merge'))
+    piece_id = Column(Integer)
+    name = Column(UnicodeText)
+    for_sale = Column(Boolean, default=False)
+    type = Column(Choice(c.ART_PIECE_TYPE_OPTS), default=c.PRINT)
+    gallery = Column(Choice(c.ART_PIECE_GALLERY_OPTS), default=c.GENERAL)
+    media = Column(UnicodeText)
+    print_run_num = Column(Integer, default=0, nullable=True)
+    print_run_total = Column(Integer, default=0, nullable=True)
+    opening_bid = Column(Integer, default=0, nullable=True)
+    quick_sale_price = Column(Integer, default=0, nullable=True)
+    no_quick_sale = Column(Boolean, default=False)
+
+    status = Column(Choice(c.ART_PIECE_STATUS_OPTS), default=c.EXPECTED,
+                    admin_only=True)
+
+    @presave_adjustment
+    def create_piece_id(self):
+        if not self.piece_id:
+            self.piece_id = int(self.app.highest_piece_id) + 1
 
 
 @Session.model_mixin

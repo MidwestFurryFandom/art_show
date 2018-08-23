@@ -91,6 +91,28 @@ class Root:
             'charge': Charge(app.attendee)
         }
 
+    def save_art_show_piece(self, session, app_id, message='', **params):
+        piece = session.art_show_piece(params, restricted=True, bools=['for_sale', 'no_quick_sale'])
+        app = session.art_show_application(app_id)
+
+        if cherrypy.request.method == 'POST':
+            message = check(piece)
+            if not message:
+                piece.app = app
+                session.add(piece)
+
+                raise HTTPRedirect('edit?id={}&message={}', app.id,
+                                   'Your art show piece has been saved')
+            else:
+                raise HTTPRedirect('edit?id={}&message={}', app.id,
+                                   message)
+
+        return {
+            'message': message,
+            'app': app,
+            'piece': piece,
+        }
+
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
 

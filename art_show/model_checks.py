@@ -1,4 +1,4 @@
-from .models import ArtShowApplication
+from .models import ArtShowApplication, ArtShowPiece
 from uber.decorators import prereg_validation, validation
 from uber.config import c
 from uber.models import Session
@@ -62,6 +62,60 @@ def discounted_price(app):
     except Exception:
         return "What you entered for Overridden Price ({}) " \
                "isn't even a number".format(app.overridden_price)
+
+
+ArtShowPiece.required = [('name', 'Name'),
+                         ('for_sale','If this piece is for sale'),
+                         ('gallery', 'Gallery'),
+                         ('type', 'Type'),
+                         ('media', 'Media')]
+
+
+@validation.ArtShowPiece
+def print_run_if_print(piece):
+    if piece.type == c.PRINT:
+        if not piece.print_run_num:
+            return "Please enter the piece's edition number"
+        if not piece.print_run_total:
+            return "Please enter the total number of prints for this piece's print run"
+
+        try:
+            num = int(piece.print_run_num)
+            total = int(piece.print_run_total)
+            if total <= 0:
+                return "Print runs must have at least 1 print"
+            if num <= 0:
+                return "Your piece must be at least edition 1 of {}".format(total)
+            if total < num:
+                return "Your piece's edition number cannot be higher than the total print run"
+        except Exception:
+            return "What you entered for the print edition or run total ({}/{}) isn't even a number".format(piece.print_run_num, piece.print_run_total)
+
+
+@validation.ArtShowPiece
+def price_checks_if_for_sale(piece):
+    if piece.for_sale:
+        if not piece.opening_bid:
+            return "Please enter an opening bid for this piece"
+
+        try:
+            price = int(piece.opening_bid)
+            if price <= 0:
+                return "Your piece must cost more than $0"
+        except Exception:
+            return "What you entered for the opening bid ({}) isn't even a number".format(piece.opening_bid)
+
+
+        if not piece.no_quick_sale:
+            if not piece.quick_sale_price:
+                "Please enter a quick sale price"
+
+            try:
+                price = int(piece.quick_sale_price)
+                if price <= 0:
+                    return "Your piece must cost more than $0, even after bidding ends"
+            except Exception:
+                return "What you entered for the quick sale price ({}) isn't even a number".format(piece.quick_sale_price)
 
 
 @prereg_validation.Attendee
