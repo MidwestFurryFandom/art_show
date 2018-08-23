@@ -187,7 +187,7 @@ class Root:
                 attendee.amount_paid += charge.dollar_amount
             session.add(attendee)
             send_email.delay(
-                c.ART_SHOW_EMAIL,
+                c.ADMIN_EMAIL,
                 c.ART_SHOW_EMAIL,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_notification.txt',
