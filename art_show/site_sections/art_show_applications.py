@@ -1,7 +1,7 @@
 import cherrypy
 
 from uber.config import c
-from uber.decorators import all_renderable, render, credit_card
+from uber.decorators import ajax, all_renderable, render, credit_card
 from uber.errors import HTTPRedirect
 from uber.tasks.email import send_email
 from uber.utils import Charge, check
@@ -94,6 +94,7 @@ class Root:
             'charge': Charge(app.attendee)
         }
 
+    @ajax
     def save_art_show_piece(self, session, app_id, message='', **params):
         restricted = False if params['return_to'] == '/art_show_admin/pieces' else True
         piece = session.art_show_piece(params, restricted=restricted, bools=['for_sale', 'no_quick_sale'])
@@ -104,34 +105,25 @@ class Root:
             if not message:
                 piece.app = app
                 session.add(piece)
+                session.commit()
 
-                raise HTTPRedirect('..{}?id={}&message={}',
-                                   params['return_to'],
-                                   app.id,
-                                   'Art show piece saved')
-            else:
-                raise HTTPRedirect('..{}?id={}&message={}',
-                                   params['return_to'],
-                                   app.id,
-                                   message)
+        return {'error': message,
+                'success': 'Piece "{}" successfully saved'.format(piece.name)}
 
-        return {
-            'message': message,
-            'app': app,
-            'piece': piece,
-        }
-
+    @ajax
     def remove_art_show_piece(self, session, id, **params):
         piece = session.art_show_piece(id)
-        app = piece.app
+
+        message = ''
 
         if cherrypy.request.method == 'POST':
-            session.delete(piece)
-            session.commit()
-            raise HTTPRedirect('..{}?id={}&message={}',
-                               params['return_to'],
-                               app.id,
-                               'Art show piece removed')
+            if not piece:
+                message = 'Piece not found'
+            else:
+                session.delete(piece)
+                session.commit()
+
+        return {'error': message}
 
 
     def confirmation(self, session, id):

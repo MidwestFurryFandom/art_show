@@ -15,7 +15,7 @@
         <h4 class="modal-title" id="piece_title_{{ real_piece.id or 'new' }}">{{ "Add" if not real_piece.id else "Edit" }} Art Show Piece</h4>
       </div>
 
-      <form id="add_piece" method="post" action="../art_show_applications/save_art_show_piece" role="form" class="form-horizontal">
+      <form target="upload_frame" method="post" action="../art_show_applications/save_art_show_piece" role="form" class="form-horizontal">
         <div class="modal-body">
           <input type="hidden" name="id" value="{{ real_piece.id or 'None' }}" />
           <input type="hidden" name="app_id" value="{{ app.id }}" />
@@ -92,6 +92,8 @@
 </div>
 {%- endmacro -%}
 
+<iframe id="upload_frame" name="upload_frame" style="display:none"></iframe>
+
 <div id="piece_modals">
   {{ piece_modal() }}
   {% if app.art_show_pieces -%}
@@ -144,11 +146,11 @@
       </thead>
       <tbody>
       {% for piece in app.art_show_pieces %}
-      <tr class="piece-row" data-item_id="{{ piece.id }}">
+      <tr class="piece-row" data-piece_id="{{ piece.id }}">
         <td> {{ app.artist_id }}-{{ piece.piece_id }} </td>
         <td>
           {% if admin_area %}
-          <form method="post" action="../art_show_applications/save_art_show_piece" role="form" class="form-horizontal">
+          <form method="post" action="../art_show_applications/save_art_show_piece" target="upload_frame" role="form" class="form-horizontal">
             <input type="hidden" name="app_id" value="{{ app.id }}" />
             <input type="hidden" name="id" value="{{ piece.id }}" />
             <input type="hidden" name="return_to" value="{{ c.PAGE_PATH }}" />
@@ -156,7 +158,7 @@
           <select name="status" class="form-control">
             {{ options(c.ART_PIECE_STATUS_OPTS, piece.status) }}
           </select>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary status_button">
             <span class="glyphicon glyphicon-ok"></span>
           </button>
           </form>
@@ -256,7 +258,7 @@
 
     var editPieceModal = function(e) {
         e.preventDefault();
-        var id = $(this).closest('.piece-row').data('item_id');
+        var id = $(this).closest('.piece-row').data('piece_id');
         $('#piece_'+id).modal();
     };
 
@@ -273,13 +275,43 @@
         $('#add_piece_modal').on('click', addPieceModal);
         $('.edit_piece_modal').on('click', editPieceModal);
 
+        $('#piece_modals').find('form').submit(function(e) {
+            $(this).find('.save_piece').prop('disabled', true);
+            return true;
+        });
+
+        $('#upload_frame').load(function() {
+            try {
+                var responseText = $(this.contentDocument.body).text().trim();
+                this.contentDocument.body.innerHTML = '';
+                if (responseText) {
+                    try {
+                        var response = $.parseJSON(responseText);
+                        if (!response['error']) {
+                            var $modals = $('#piece_modals').find('.modal');
+                            $modals.modal('hide');
+                            location.href = '?id={{ app.id }}&message='+response['success'];
+                        } else {
+                            toastr.error('', response['error'], {timeOut: 5000});
+                        }
+                    } catch(ex) {
+                        toastr.error('', 'There was an error saving the piece: ' + responseText.substring(0, 1024), {timeOut: 5000});
+                    }
+                }
+            } finally {
+                $('#piece_modals').find('.save_piece').prop('disabled', false);
+            }
+        });
+
         $('.remove_piece').on('click', function (event) {
             event.preventDefault();
-            var $formToSubmit = $(this).closest('form'),
-                name = $(this).data('name');
+            var pieceRow = $(this).closest('.piece-row'),
+                dataTable = pieceRow.closest('table').DataTable(),
+                pieceId = pieceRow.data('piece_id');
+                pieceName = $(this).data('name');
             bootbox.confirm({
                 backdrop: true,
-                title: 'Delete "'+name+'"?',
+                title: 'Delete "'+pieceName+'"?',
                 message: 'Are you sure you want to delete this piece? This cannot be undone.',
                 buttons: {
                     confirm: { label: 'Delete Piece', className: 'btn-danger' },
@@ -287,7 +319,26 @@
                 },
                 callback: function (result) {
                     if (result) {
-                        $formToSubmit.submit();
+                        $.ajax({
+                            method: 'POST',
+                            url: '../art_show_applications/remove_art_show_piece',
+                            data: {
+                                id: pieceId,
+                                csrf_token: csrf_token
+                            },
+                            success: function(response, status) {
+                                if (response['error']) {
+                                    toastr.error('There was an error removing the piece: ' + response['error']);
+                                } else {
+                                    dataTable.row(pieceRow).remove();
+                                    dataTable.draw();
+                                    toastr.success('', pieceName + ' successfully removed!', {timeOut: 2000});
+                                }
+                            },
+                            error: function(response, status) {
+                                toastr.error('There was an error removing the item: ' + response);
+                            }
+                        });
                     }
                 }
             });
@@ -295,7 +346,6 @@
 
         $('.save_piece').on('click', function (event) {
             $('.active').find('input').prop('checked', true); // Keyboard accessibility
-
         });
     });
 </script>

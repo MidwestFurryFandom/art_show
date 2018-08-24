@@ -97,9 +97,9 @@ def print_run_if_print(piece):
             if total <= 0:
                 return "Print runs must have at least 1 print"
             if num <= 0:
-                return "Your piece must be at least edition 1 of {}".format(total)
+                return "A piece must be at least edition 1 of {}".format(total)
             if total < num:
-                return "Your piece's edition number cannot be higher than the total print run"
+                return "A piece's edition number cannot be higher than the total print run"
         except Exception:
             return "What you entered for the print edition or run total ({}/{}) isn't even a number".format(piece.print_run_num, piece.print_run_total)
 
@@ -113,7 +113,7 @@ def price_checks_if_for_sale(piece):
         try:
             price = int(piece.opening_bid)
             if price <= 0:
-                return "Your piece must cost more than $0"
+                return "A piece must cost more than $0"
         except Exception:
             return "What you entered for the opening bid ({}) isn't even a number".format(piece.opening_bid)
 
@@ -125,7 +125,7 @@ def price_checks_if_for_sale(piece):
             try:
                 price = int(piece.quick_sale_price)
                 if price <= 0:
-                    return "Your piece must cost more than $0, even after bidding ends"
+                    return "A piece must cost more than $0, even after bidding ends"
             except Exception:
                 return "What you entered for the quick sale price ({}) isn't even a number".format(piece.quick_sale_price)
 
