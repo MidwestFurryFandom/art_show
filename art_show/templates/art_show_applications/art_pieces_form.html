@@ -49,9 +49,9 @@
               <label class="col-sm-3 control-label">
                 Print Number
               </label>
-              <div class="col-sm-2"><input class="form-control" type="number" step="1" min="1" name="print_run_num" placeholder="X" /></div>
+              <div class="col-sm-2"><input class="form-control" type="number" step="1" min="1" value="{{ piece.print_run_num or '' }}" name="print_run_num" placeholder="X" /></div>
               <div class="col-sm-1"><p class="form-control-static text-center">OF</p></div>
-              <div class="col-sm-3"><input class="form-control" type="number" step="1" min="1" name="print_run_total" placeholder="Y" /></div>
+              <div class="col-sm-3"><input class="form-control" type="number" step="1" min="1" value="{{ piece.print_run_total or '' }}" name="print_run_total" placeholder="Y" /></div>
             </div>
           </div>
         </div>
@@ -62,7 +62,7 @@
             <div class="col-sm-6">
               <div class="input-group">
                 <span class="input-group-addon">$</span>
-                <input type="number" step="1" min="1" class="form-control" name="opening_bid" value="{{ piece.opening_bid }}" autocomplete="off" />
+                <input type="number" step="1" min="1" class="form-control" name="opening_bid" value="{{ piece.opening_bid or '' }}" autocomplete="off" />
               </div>
             </div>
           </div>
@@ -72,7 +72,7 @@
             <div class="col-sm-6">
               <div class="input-group">
                 <span class="input-group-addon">$</span>
-                <input type="number" step="1" min="0" class="form-control" name="quick_sale_price" value="{{ piece.quick_sale_price }}" autocomplete="off" />
+                <input type="number" step="1" min="0" class="form-control" name="quick_sale_price" value="{{ piece.quick_sale_price or '' }}" autocomplete="off" />
               </div>
               <label class="optional-field checkbox-label">
                 <input type="checkbox" name="no_quick_sale" value="1"{% if real_piece.no_quick_sale %} checked{% endif %} />
@@ -124,7 +124,7 @@
       </thead>
       <tbody>
       {% for piece in app.art_show_pieces %}
-      <tr>
+      <tr class="piece-row" data-item_id="{{ piece.id }}">
         <td> {{ piece.piece_id }} </td>
         <td> {{ piece.status_label }}</td>
         <td> {{ piece.name }} </td>
@@ -139,6 +139,11 @@
           {% else %}N/A{% endif %}
         </td>
         <td>
+          {% if piece.status in [c.EXPECTED, c.RECEIVED, c.NOT_RECEIVED] %}
+          <button type="button" class="btn btn-primary edit_piece_modal">
+            <span class="glyphicon glyphicon-pencil"></span>
+          </button>
+          {% endif %}
         </td>
       </tr>
       {% endfor %}
@@ -205,6 +210,12 @@
         $('#piece_new').modal();
     };
 
+    var editPieceModal = function(e) {
+      e.preventDefault();
+      var id = $(this).closest('.piece-row').data('item_id');
+      $('#piece_'+id).modal();
+    };
+
     $(document).ready(function() {
         $('input[type=radio][name=type]').on('change', showOrHidePrint);
         $('input[type=radio][name=for_sale]').on('change', disableOrEnablePrices);
@@ -216,6 +227,7 @@
         });
 
         $('#add_piece_modal').on('click', addPieceModal);
+        $('.edit_piece_modal').on('click', editPieceModal);
 
         $('table').on('click', '.delete-button', function (event) {
             event.preventDefault();
