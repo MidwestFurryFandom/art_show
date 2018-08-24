@@ -103,12 +103,31 @@
 
 <div class="panel panel-default">
   <div class="panel-heading">
-    <h3 class="panel-title">Add Piece</h3>
+    <h3 class="panel-title">Art Show Information</h3>
+  </div>
+  <div class="panel-body">
+    <form method="post" action="../art_show_applications/edit" role="form" class="form-horizontal">
+      <input type="hidden" name="id" value="{{ app.id }}" />
+      <input type="hidden" name="return_to" value="{{ c.PAGE_PATH }}" />
+      {{ csrf_token() }}
+      {{ macros.form_group(app, 'banner_name', label="Banner Name", help="The name displayed with your art.", placeholder=app.artist_name or app.attendee.full_name) }}
+      {{ macros.form_group(app, 'check_payable', label="Name on Check", help="The name your check should be made payable to.", placeholder=app.attendee.legal_name or app.attendee.full_name) }}
+      {{ macros.form_group(app, 'hotel_name', label="Hotel Staying At") }}
+      {{ macros.form_group(app, 'hotel_room_num', label="Room Number") }}
+
+      <div class="form-group">
+        <div class="col-sm-6 col-sm-offset-3">
+          <div class="input-group">
+            <button type="submit" class="btn btn-primary">Update Info</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="panel-heading">
+    <h3 class="panel-title">Art Show Pieces</h3>
   </div>
   <div class="panel-body"><button class="btn btn-primary" id="add_piece_modal">Add {% if app.art_show_pieces %}Another {% endif %}Piece</button></div>
-  <div class="panel-heading">
-    <h3 class="panel-title">Edit Pieces</h3>
-  </div>
   <div class="table-responsive">
     <table class="table table-striped datatable">
       <thead>
@@ -126,7 +145,7 @@
       <tbody>
       {% for piece in app.art_show_pieces %}
       <tr class="piece-row" data-item_id="{{ piece.id }}">
-        <td> {{ piece.piece_id }} </td>
+        <td> {{ app.artist_id }}-{{ piece.piece_id }} </td>
         <td>
           {% if admin_area %}
           <form method="post" action="../art_show_applications/save_art_show_piece" role="form" class="form-horizontal">

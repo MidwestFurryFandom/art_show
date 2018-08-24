@@ -49,8 +49,20 @@ def need_some_space(app):
 @prereg_validation.ArtShowApplication
 def too_late_now(app):
     if app.status != c.UNAPPROVED:
-        return 'Your app has been {} and may no longer be updated'\
-            .format(app.status_label)
+        for field in ['artist_name',
+                      'panels',
+                      'panels_ad',
+                      'tables',
+                      'tables_ad',
+                      'description',
+                      'website',
+                      'special_needs',
+                      'status',
+                      'delivery_method',
+                      'admin_notes']:
+            if app.orig_value_of(field) != getattr(app, field):
+                return 'Your application has been {} and may no longer be updated'\
+                    .format(app.status_label)
 
 
 @validation.ArtShowApplication

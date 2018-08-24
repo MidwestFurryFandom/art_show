@@ -64,6 +64,8 @@ class Root:
     def edit(self, session, message='', **params):
         app = session.art_show_application(params, restricted=True,
                                            ignore_csrf=True)
+        return_to = params['return_to'] \
+            if 'return_to' in params else '/art_show_applications/edit'
         if 'id' not in params:
             message = 'Invalid art show application ID. ' \
                       'Please try going back in your browser.'
@@ -80,7 +82,7 @@ class Root:
                     render('emails/art_show/appchange_notification.html',
                            {'app': app}, encoding=None), 'html',
                     model=app.to_dict('id'))
-                raise HTTPRedirect('edit?id={}&message={}', app.id,
+                raise HTTPRedirect('..{}?id={}&message={}', return_to, app.id,
                                    'Your application has been updated')
             else:
                 session.rollback()
@@ -103,12 +105,12 @@ class Root:
                 piece.app = app
                 session.add(piece)
 
-                raise HTTPRedirect('../{}?id={}&message={}',
+                raise HTTPRedirect('..{}?id={}&message={}',
                                    params['return_to'],
                                    app.id,
                                    'Art show piece saved')
             else:
-                raise HTTPRedirect('../{}?id={}&message={}',
+                raise HTTPRedirect('..{}?id={}&message={}',
                                    params['return_to'],
                                    app.id,
                                    message)
@@ -126,7 +128,7 @@ class Root:
         if cherrypy.request.method == 'POST':
             session.delete(piece)
             session.commit()
-            raise HTTPRedirect('../{}?id={}&message={}',
+            raise HTTPRedirect('..{}?id={}&message={}',
                                params['return_to'],
                                app.id,
                                'Art show piece removed')

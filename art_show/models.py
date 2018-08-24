@@ -1,3 +1,6 @@
+import random
+import string
+
 from uber.config import c
 from uber.models import Session
 from uber.models import MagModel
@@ -67,6 +70,11 @@ class ArtShowApplication(MagModel):
                             backref=backref('art_agent_applications', cascade='save-update, merge'))
     agent_code = Column(UnicodeText)
     artist_name = Column(UnicodeText)
+    artist_id = Column(UnicodeText, admin_only=True)
+    banner_name = Column(UnicodeText)
+    check_payable = Column(UnicodeText)
+    hotel_name = Column(UnicodeText)
+    hotel_room_num = Column(UnicodeText)
     panels = Column(Integer, default=0)
     panels_ad = Column(Integer, default=0)
     tables = Column(Integer, default=0)
@@ -88,6 +96,34 @@ class ArtShowApplication(MagModel):
 
         if self.overridden_price == '':
             self.overridden_price = None
+
+    @presave_adjustment
+    def add_artist_id(self):
+        if self.status == c.APPROVED:
+            from uber.models import Session
+            with Session() as session:
+                # Kind of inefficient, but doing one big query for all the existing
+                # codes will be faster than a separate query for each new code.
+                old_codes = set(
+                    s for (s,) in session.query(ArtShowApplication.artist_id).all())
+
+            code_candidate = self._get_code_from_name(self.artist_name, old_codes) \
+                             or self._get_code_from_name(self.attendee.last_name, old_codes) \
+                             or self._get_code_from_name(self.attendee.first_name, old_codes)
+
+            if not code_candidate:
+                # We're out of manual alternatives, time for a random code
+                code_candidates = ''.join([random.choice(string.ascii_uppercase) for _ in range(100)])
+                for code_candidate in code_candidates:
+                    if code_candidate not in old_codes:
+                        break
+
+            self.artist_id = code_candidate.upper()
+
+    def _get_code_from_name(self, name, old_codes):
+        name = "".join(list(filter(lambda char: char.isalpha(), name)))
+        if len(name) >= 3:
+            return name[:3] if name[:3].upper() not in old_codes else None
 
     @presave_adjustment
     def add_new_agent_code(self):
