@@ -88,11 +88,13 @@ class Root:
         return {
             'message': message,
             'app': app,
+            'return_to': 'edit',
             'charge': Charge(app.attendee)
         }
 
     def save_art_show_piece(self, session, app_id, message='', **params):
-        piece = session.art_show_piece(params, restricted=True, bools=['for_sale', 'no_quick_sale'])
+        restricted = False if params['return_to'] == '/art_show_admin/pieces' else True
+        piece = session.art_show_piece(params, restricted=restricted, bools=['for_sale', 'no_quick_sale'])
         app = session.art_show_application(app_id)
 
         if cherrypy.request.method == 'POST':
@@ -101,10 +103,14 @@ class Root:
                 piece.app = app
                 session.add(piece)
 
-                raise HTTPRedirect('edit?id={}&message={}', app.id,
-                                   'Your art show piece has been saved')
+                raise HTTPRedirect('../{}?id={}&message={}',
+                                   params['return_to'],
+                                   app.id,
+                                   'Art show piece saved')
             else:
-                raise HTTPRedirect('edit?id={}&message={}', app.id,
+                raise HTTPRedirect('../{}?id={}&message={}',
+                                   params['return_to'],
+                                   app.id,
                                    message)
 
         return {
@@ -116,11 +122,14 @@ class Root:
     def remove_art_show_piece(self, session, id, **params):
         piece = session.art_show_piece(id)
         app = piece.app
+
         if cherrypy.request.method == 'POST':
             session.delete(piece)
             session.commit()
-            raise HTTPRedirect('edit?id={}&message={}', app.id,
-                               'Your art show piece has been removed')
+            raise HTTPRedirect('../{}?id={}&message={}',
+                               params['return_to'],
+                               app.id,
+                               'Art show piece removed')
 
 
     def confirmation(self, session, id):
