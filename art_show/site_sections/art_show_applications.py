@@ -113,6 +113,16 @@ class Root:
             'piece': piece,
         }
 
+    def remove_art_show_piece(self, session, id, **params):
+        piece = session.art_show_piece(id)
+        app = piece.app
+        if cherrypy.request.method == 'POST':
+            session.delete(piece)
+            session.commit()
+            raise HTTPRedirect('edit?id={}&message={}', app.id,
+                               'Your art show piece has been removed')
+
+
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
 

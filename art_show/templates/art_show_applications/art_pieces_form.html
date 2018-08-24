@@ -139,6 +139,15 @@
           {% else %}N/A{% endif %}
         </td>
         <td>
+          {% if piece.status == c.EXPECTED %}
+          <form method="post" action="remove_art_show_piece">
+            {{ csrf_token() }}
+            <input type="hidden" name="id" value="{{ piece.id }}" />
+            <button type="button" class="btn btn-danger remove_piece" data-name="{{ piece.name }}">
+              <span class="glyphicon glyphicon-remove"></span>
+            </button>
+          </form>
+          {% endif %}
           {% if piece.status in [c.EXPECTED, c.RECEIVED, c.NOT_RECEIVED] %}
           <button type="button" class="btn btn-primary edit_piece_modal">
             <span class="glyphicon glyphicon-pencil"></span>
@@ -229,17 +238,16 @@
         $('#add_piece_modal').on('click', addPieceModal);
         $('.edit_piece_modal').on('click', editPieceModal);
 
-        $('table').on('click', '.delete-button', function (event) {
+        $('.remove_piece').on('click', function (event) {
             event.preventDefault();
-            var $self = $(this),
-                lastFirst = $self.data('last_first'),
-                $formToSubmit = $self.closest('form');
+            var $formToSubmit = $(this).closest('form'),
+                name = $(this).data('name');
             bootbox.confirm({
                 backdrop: true,
-                title: 'Delete "' + lastFirst + '"?',
+                title: 'Delete "'+name+'"?',
                 message: 'Are you sure you want to delete this piece? This cannot be undone.',
                 buttons: {
-                    confirm: { label: 'Delete Account', className: 'btn-danger' },
+                    confirm: { label: 'Delete Piece', className: 'btn-danger' },
                     cancel: { label: 'Nevermind', className: 'btn-default' }
                 },
                 callback: function (result) {
@@ -250,8 +258,9 @@
             });
         });
 
-        $('table').on('click', '.update-button', function (event) {
-            $(event.target).closest('tr').find('.update-form').submit();
+        $('.save_piece').on('click', function (event) {
+            $('.active').find('input').prop('checked', true); // Keyboard accessibility
+
         });
     });
 </script>
