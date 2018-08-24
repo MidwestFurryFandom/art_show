@@ -125,6 +125,19 @@ class Root:
 
         return {'error': message}
 
+    def confirm_pieces(self, session, id, **params):
+        app = session.art_show_application(id)
+
+        if cherrypy.request.method == 'POST':
+            send_email.delay(
+                c.ART_SHOW_EMAIL,
+                app.email,
+                'Art Show Pieces Updated',
+                render('emails/art_show/pieces_confirmation.html',
+                       {'app': app}, encoding=None), 'html',
+                model=app.to_dict('id'))
+            raise HTTPRedirect('..{}?id={}&message={}', params['return_to'], app.id,
+                               'Confirmation email sent')
 
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
