@@ -29,6 +29,7 @@
 <table class="table table-striped datatable">
 <thead><tr>
     <th>Name</th>
+    <th>Artist Type</th>
     <th>Pieces Submitted</th>
     <th>Status</th>
     <th>General Panels</th>
@@ -42,6 +43,9 @@
 {% for app in applications %}
     <tr>
         <td style="text-align:left" data-order="{{ app.attendee.full_name }}" data-search="{{ app.attendee.full_name }}"> <a href="form?id={{ app.id }}">{{ app.attendee.full_name|default("?????") }}{% if app.artist_name %} ({{ app.artist_name }}){% endif %}</a> </td>
+        <td>{% if app.delivery_method == c.BRINGING_IN %}Attending
+            {% elif app.delivery_method == c.BY_MAIL %}Mailing In
+            {% elif app.delivery_method == c.AGENT %}Agenting{% endif %}</td>
         <td>{% if app.incomplete_reason or app.is_unpaid %}N/A{% else %}
         {{ app.art_show_pieces|length }} (<a href="pieces?id={{ app.id }}">View</a>){% endif %}</td>
         <td>{{ app.status_label }}</td>
