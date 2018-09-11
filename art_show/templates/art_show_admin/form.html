@@ -64,7 +64,7 @@ app, c.PAGE_PATH,
         <label class="col-sm-3 control-label">Paid?</label>
         <div class="col-sm-6">
           <p class="form-control-static">
-            {% if app.status != c.APPROVED %}N/A{% else %}{{ app.is_unpaid|yesno('No,Yes') }}{% endif %}
+            {% if app.status == c.APPROVED %}No{% elif app.status == c.PAID %}Yes{% else %}N/A{% endif %}
             <a href="../art_show_applications/edit?id={{ app.id }}">(payment link)</a>
           </p>
         </div>
