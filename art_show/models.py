@@ -252,7 +252,8 @@ class Attendee:
                 self.paid = c.HAS_PAID
 
             for app in self.art_show_applications:
-                app.status = c.PAID
+                if app.status == c.APPROVED:
+                    app.status = c.PAID
 
     @cost_property
     def art_show_app_cost(self):
