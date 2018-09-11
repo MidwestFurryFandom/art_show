@@ -148,7 +148,7 @@ class ArtShowApplication(MagModel):
         if self.delivery_method == c.BY_MAIL \
                 and not self.attendee.full_address:
             return "Mailing address required"
-        if self.attendee.badge_status == c.NEW_STATUS:
+        if self.attendee.placeholder and self.attendee.badge_status != c.NOT_ATTENDING:
             return "Missing registration info"
 
     @property
@@ -259,3 +259,12 @@ class Attendee:
                      or self.country not in ['United States', 'Canada']) \
                 and self.address1:
             return True
+
+    @property
+    def payment_page(self):
+        if self.art_show_applications:
+            for app in self.art_show_applications:
+                if app.total_cost:
+                    return '../art_show_applications/edit?id={}'.format(app.id)
+        else:
+            return 'attendee_donation_form?id={}'.format(self.id)

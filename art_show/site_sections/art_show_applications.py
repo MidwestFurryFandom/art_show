@@ -157,7 +157,8 @@ class Root:
             message = 'Please enter a state, province, or region.'
         if not attendee.country:
             message = 'Please enter a country.'
-        if not attendee.international and not c.AT_OR_POST_CON:
+        if not attendee.international and not c.AT_OR_POST_CON \
+                and attendee.country == 'United States':
             if _invalid_zip_code(attendee.zip_code):
                 message = 'Enter a valid zip code'
 
@@ -233,6 +234,8 @@ class Root:
                                    app.id, message)
             else:
                 attendee.amount_paid += charge.dollar_amount
+                if attendee.paid == c.NOT_PAID:
+                    attendee.paid = c.HAS_PAID
             session.add(attendee)
             send_email.delay(
                 c.ADMIN_EMAIL,

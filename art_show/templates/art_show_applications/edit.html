@@ -11,11 +11,11 @@
         {% if not app.incomplete_reason and app.is_unpaid %}
           In order to complete your application, please pay ${{ app.attendee.amount_unpaid }} using the button below.
           {% if app.attendee.badge_cost %}This total includes the cost of your badge, if you have not paid for it
-          already.{% endif %}<br/>
+          already.{% endif %}<br/><br/>
           <div style="text-align:center">
               {{ stripe_form('process_art_show_payment', charge) }}
           </div><br/><br/>
-        {% elif app.attendee.badge_status == c.NEW_STATUS %}
+        {% elif app.attendee.placeholder and app.attendee.badge_status != c.NOT_ATTENDING %}
           Before completing your application, please finish filling out your information
           <a href="../preregistration/confirm?id={{ app.attendee_id }}" target="_blank">here</a>. Afterwards, you will
           be able to pay for your application on this page.
