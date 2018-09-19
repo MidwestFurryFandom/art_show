@@ -94,6 +94,8 @@ def print_run_if_print(piece):
         try:
             num = int(piece.print_run_num)
             total = int(piece.print_run_total)
+            if total > 1000:
+                return "Print runs can only be 1000 prints or fewer"
             if total <= 0:
                 return "Print runs must have at least 1 print"
             if num <= 0:
