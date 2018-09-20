@@ -21,7 +21,7 @@
           <input type="hidden" name="app_id" value="{{ app.id }}" />
           <input type="hidden" name="return_to" value="{{ c.PAGE_PATH }}" />
           {{ csrf_token() }}
-          {{ macros.form_group(piece, 'name', label="Piece Name", placeholder="The title of this piece", is_required=True) }}
+          {{ macros.form_group(piece, 'name', label="Piece Name", length=c.PIECE_NAME_LENGTH, placeholder="The title of this piece", is_required=True) }}
 
           <div class="form-group">
             <label class="col-sm-3 control-label">Is This Piece For Sale?</label>
@@ -41,7 +41,7 @@
           {{ macros.form_group(piece, 'type', type='radio_buttons', label="Piece Type", is_required=True) }}
 
           <div class="media">
-            {{ macros.form_group(piece, 'media', label="Original Media", placeholder="A short description of the exact media for this piece", is_required=True) }}
+            {{ macros.form_group(piece, 'media', label="Original Media", length=15, placeholder="A short description of the exact media for this piece", is_required=True) }}
           </div>
 
           <div class="print">

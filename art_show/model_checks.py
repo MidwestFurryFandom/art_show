@@ -130,6 +130,18 @@ def price_checks_if_for_sale(piece):
                 return "What you entered for the quick sale price ({}) isn't even a number".format(piece.quick_sale_price)
 
 
+@validation.ArtShowPiece
+def name_max_length(piece):
+    if len(piece.name) > c.PIECE_NAME_LENGTH:
+        return "Piece names must be {} characters or fewer.".format(c.PIECE_NAME_LENGTH)
+
+
+@validation.ArtShowPiece
+def media_max_length(piece):
+    if len(piece.media) > 15:
+        return "The description of the piece's media must be 15 characters or fewer."
+
+
 @prereg_validation.Attendee
 def promo_code_is_useful(attendee):
     if attendee.promo_code:
