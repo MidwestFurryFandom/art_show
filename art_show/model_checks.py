@@ -86,8 +86,7 @@ ArtShowPiece.required = [('name', 'Name'),
 @validation.ArtShowPiece
 def no_duplicate_piece_names(piece):
     with Session() as session:
-        if session.query(ArtShowPiece).filter_by(
-                name=piece.name).filter(ArtShowPiece.id != piece.id).all():
+        if session.query(ArtShowPiece).iexact(name=piece.name).filter(ArtShowPiece.id != piece.id).all():
             return "There's already a piece with that name."
 
 
