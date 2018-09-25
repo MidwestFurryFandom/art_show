@@ -1,7 +1,5 @@
 import random
-import re
 import string
-import textwrap
 
 from uber.config import c
 from uber.models import Session
@@ -12,7 +10,7 @@ from uber.models.types import Choice, DefaultColumn as Column,\
 
 from residue import CoerceUTF8 as UnicodeText, UUID
 from sqlalchemy.orm import backref
-from sqlalchemy.types import Integer
+from sqlalchemy.types import Integer, Boolean
 from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import ForeignKey, Index
 
@@ -72,6 +70,11 @@ class ArtShowApplication(MagModel):
                             backref=backref('art_agent_applications', cascade='save-update, merge'))
     agent_code = Column(UnicodeText)
     artist_name = Column(UnicodeText)
+    artist_id = Column(UnicodeText, admin_only=True)
+    banner_name = Column(UnicodeText)
+    check_payable = Column(UnicodeText)
+    hotel_name = Column(UnicodeText)
+    hotel_room_num = Column(UnicodeText)
     panels = Column(Integer, default=0)
     panels_ad = Column(Integer, default=0)
     tables = Column(Integer, default=0)
@@ -93,6 +96,34 @@ class ArtShowApplication(MagModel):
 
         if self.overridden_price == '':
             self.overridden_price = None
+
+    @presave_adjustment
+    def add_artist_id(self):
+        if self.status == c.APPROVED and not self.artist_id:
+            from uber.models import Session
+            with Session() as session:
+                # Kind of inefficient, but doing one big query for all the existing
+                # codes will be faster than a separate query for each new code.
+                old_codes = set(
+                    s for (s,) in session.query(ArtShowApplication.artist_id).all())
+
+            code_candidate = self._get_code_from_name(self.artist_name, old_codes) \
+                             or self._get_code_from_name(self.attendee.last_name, old_codes) \
+                             or self._get_code_from_name(self.attendee.first_name, old_codes)
+
+            if not code_candidate:
+                # We're out of manual alternatives, time for a random code
+                code_candidates = ''.join([random.choice(string.ascii_uppercase) for _ in range(100)])
+                for code_candidate in code_candidates:
+                    if code_candidate not in old_codes:
+                        break
+
+            self.artist_id = code_candidate.upper()
+
+    def _get_code_from_name(self, name, old_codes):
+        name = "".join(list(filter(lambda char: char.isalpha(), name)))
+        if len(name) >= 3:
+            return name[:3] if name[:3].upper() not in old_codes else None
 
     @presave_adjustment
     def add_new_agent_code(self):
@@ -161,6 +192,41 @@ class ArtShowApplication(MagModel):
     @property
     def is_unpaid(self):
         return self.attendee.amount_unpaid > 0
+
+    @property
+    def highest_piece_id(self):
+        if len(self.art_show_pieces) > 1:
+            return sorted([piece for piece in self.art_show_pieces if piece.piece_id], key=lambda piece: piece.piece_id, reverse=True)[0].piece_id
+        else:
+            return 0
+
+
+class ArtShowPiece(MagModel):
+    app_id = Column(UUID, ForeignKey('art_show_application.id',
+                                     ondelete='SET NULL'), nullable=True)
+    app = relationship('ArtShowApplication', foreign_keys=app_id,
+                         cascade='save-update, merge',
+                         backref=backref('art_show_pieces',
+                                         cascade='save-update, merge'))
+    piece_id = Column(Integer)
+    name = Column(UnicodeText)
+    for_sale = Column(Boolean, default=False)
+    type = Column(Choice(c.ART_PIECE_TYPE_OPTS), default=c.PRINT)
+    gallery = Column(Choice(c.ART_PIECE_GALLERY_OPTS), default=c.GENERAL)
+    media = Column(UnicodeText)
+    print_run_num = Column(Integer, default=0, nullable=True)
+    print_run_total = Column(Integer, default=0, nullable=True)
+    opening_bid = Column(Integer, default=0, nullable=True)
+    quick_sale_price = Column(Integer, default=0, nullable=True)
+    no_quick_sale = Column(Boolean, default=False)
+
+    status = Column(Choice(c.ART_PIECE_STATUS_OPTS), default=c.EXPECTED,
+                    admin_only=True)
+
+    @presave_adjustment
+    def create_piece_id(self):
+        if not self.piece_id:
+            self.piece_id = int(self.app.highest_piece_id) + 1
 
 
 @Session.model_mixin

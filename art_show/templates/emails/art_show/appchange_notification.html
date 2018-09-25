@@ -9,6 +9,12 @@ the changes.
 <br/><br/>Below is the new application:
 
 <ul>
+    {% if not app.incomplete_reason and not app.is_unpaid %}
+    <li><strong>Banner Name</strong>: {{ app.banner_name or app.artist_name or app.attendee.full_name }}</li>
+    <li><strong>Name on Check</strong>: {{ app.check_payable or app.attendee.legal_name or app.attendee.full_name }}</li>
+    {% if app.hotel_name %}<li><strong>Hotel Staying At</strong>: {{ app.hotel_name }}</li>{% endif %}
+    {% if app.hotel_name %}<li><strong>Room Number</strong>: {{ app.hotel_room_num }}</li>{% endif %}
+    {% endif %}
     {% if app.artist_name %}<li><strong>Artist Name</strong>: {{ app.artist_name }}</li>{% endif %}
     <li><strong>General Panels</strong>: {{ app.panels }} panels (${{ app.panels_cost }}) </li>
     <li><strong>General Table Sections</strong>: {{ app.tables }} table sections (${{ app.tables_cost }}) </li>

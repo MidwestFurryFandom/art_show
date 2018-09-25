@@ -21,6 +21,8 @@
           be able to pay for your application on this page.
         {% elif app.delivery_method == c.BY_MAIL and not app.attendee.full_address %}
           Please fill in your mailing address below. Afterwards, you will be able to pay for your application on this page.
+        {% else %}
+        <br/><br/>{% include 'art_pieces_form.html' %}
         {% endif %}
         {% if app.delivery_method == c.BY_MAIL and app.attendee.badge_status == c.NOT_ATTENDING %}
           <br/><br/>

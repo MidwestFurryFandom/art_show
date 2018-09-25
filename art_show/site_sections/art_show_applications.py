@@ -1,7 +1,7 @@
 import cherrypy
 
 from uber.config import c
-from uber.decorators import all_renderable, render, credit_card
+from uber.decorators import ajax, all_renderable, render, credit_card
 from uber.errors import HTTPRedirect
 from uber.tasks.email import send_email
 from uber.utils import Charge, check
@@ -64,6 +64,8 @@ class Root:
     def edit(self, session, message='', **params):
         app = session.art_show_application(params, restricted=True,
                                            ignore_csrf=True)
+        return_to = params['return_to'] \
+            if 'return_to' in params else '/art_show_applications/edit'
         if 'id' not in params:
             message = 'Invalid art show application ID. ' \
                       'Please try going back in your browser.'
@@ -80,7 +82,7 @@ class Root:
                     render('emails/art_show/appchange_notification.html',
                            {'app': app}, encoding=None), 'html',
                     model=app.to_dict('id'))
-                raise HTTPRedirect('edit?id={}&message={}', app.id,
+                raise HTTPRedirect('..{}?id={}&message={}', return_to, app.id,
                                    'Your application has been updated')
             else:
                 session.rollback()
@@ -88,8 +90,54 @@ class Root:
         return {
             'message': message,
             'app': app,
+            'return_to': 'edit',
             'charge': Charge(app.attendee)
         }
+
+    @ajax
+    def save_art_show_piece(self, session, app_id, message='', **params):
+        restricted = False if params['return_to'] == '/art_show_admin/pieces' else True
+        piece = session.art_show_piece(params, restricted=restricted, bools=['for_sale', 'no_quick_sale'])
+        app = session.art_show_application(app_id)
+
+        if cherrypy.request.method == 'POST':
+            message = check(piece)
+            if not message:
+                piece.app = app
+                session.add(piece)
+                session.commit()
+
+        return {'error': message,
+                'success': 'Piece "{}" successfully saved'.format(piece.name)}
+
+    @ajax
+    def remove_art_show_piece(self, session, id, **params):
+        piece = session.art_show_piece(id)
+
+        message = ''
+
+        if cherrypy.request.method == 'POST':
+            if not piece:
+                message = 'Piece not found'
+            else:
+                session.delete(piece)
+                session.commit()
+
+        return {'error': message}
+
+    def confirm_pieces(self, session, id, **params):
+        app = session.art_show_application(id)
+
+        if cherrypy.request.method == 'POST':
+            send_email.delay(
+                c.ART_SHOW_EMAIL,
+                app.email,
+                'Art Show Pieces Updated',
+                render('emails/art_show/pieces_confirmation.html',
+                       {'app': app}, encoding=None), 'html',
+                model=app.to_dict('id'))
+            raise HTTPRedirect('..{}?id={}&message={}', params['return_to'], app.id,
+                               'Confirmation email sent')
 
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
@@ -187,7 +235,7 @@ class Root:
                 attendee.amount_paid += charge.dollar_amount
             session.add(attendee)
             send_email.delay(
-                c.ART_SHOW_EMAIL,
+                c.ADMIN_EMAIL,
                 c.ART_SHOW_EMAIL,
                 'Art Show Payment Received',
                 render('emails/art_show/payment_notification.txt',

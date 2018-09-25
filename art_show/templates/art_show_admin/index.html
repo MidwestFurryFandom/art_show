@@ -9,11 +9,27 @@
 </ol>
 
 <div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Art Show Applications</h3>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-sm-3">
+                <a class="btn btn-default" href="form?new_app=True">Add an application</a></div>
 
-    <a class="btn btn-default" href="form?new_app=True">Add an application</a>
+            <div class="col-sm-3 col-sm-offset-6 form-inline">
+                <div class="form-group">
+                <div class="control-label">Status</div> <div class="input-group" id="status_filter"></div>
+                </div>
+                <div class="form-group">
+                <div class="control-label">Paid</div> <span id="paid_filter"></span>
+                </div>
+            </div>
+        </div>
 <table class="table table-striped datatable">
 <thead><tr>
     <th>Name</th>
+    <th>Pieces Submitted</th>
     <th>Status</th>
     <th>General Panels</th>
     <th>General Tables</th>
@@ -26,6 +42,8 @@
 {% for app in applications %}
     <tr>
         <td style="text-align:left" data-order="{{ app.attendee.full_name }}" data-search="{{ app.attendee.full_name }}"> <a href="form?id={{ app.id }}">{{ app.attendee.full_name|default("?????") }}{% if app.artist_name %} ({{ app.artist_name }}){% endif %}</a> </td>
+        <td>{% if app.incomplete_reason or app.is_unpaid %}N/A{% else %}
+        {{ app.art_show_pieces|length }} (<a href="pieces?id={{ app.id }}">View</a>){% endif %}</td>
         <td>{{ app.status_label }}</td>
         <td>{{ app.panels }}</td>
         <td>{{ app.tables }}</td>

@@ -51,17 +51,24 @@ class Root:
             'new_app': new_app
         }
 
+    def pieces(self, session, id, message=''):
+        app = session.art_show_application(id)
+        return {
+            'app': app,
+            'message': message,
+        }
+
     def history(self, session, id):
-            app = session.art_show_application(id)
-            return {
-                'app': app,
-                'changes': session.query(Tracking).filter(
-                    or_(Tracking.links.like('%art_show_application({})%'
-                                            .format(id)),
-                    and_(Tracking.model == 'ArtShowApplication',
-                         Tracking.fk_id == id)))
-                    .order_by(Tracking.when).all()
-            }
+        app = session.art_show_application(id)
+        return {
+            'app': app,
+            'changes': session.query(Tracking).filter(
+                or_(Tracking.links.like('%art_show_application({})%'
+                                        .format(id)),
+                and_(Tracking.model == 'ArtShowApplication',
+                     Tracking.fk_id == id)))
+                .order_by(Tracking.when).all()
+        }
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',
