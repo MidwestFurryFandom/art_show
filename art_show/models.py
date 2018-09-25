@@ -8,7 +8,7 @@ from uber.decorators import cost_property, presave_adjustment, render
 from uber.models.types import Choice, DefaultColumn as Column,\
     default_relationship as relationship
 
-from residue import CoerceUTF8 as UnicodeText, UUID
+from residue import CoerceUTF8 as UnicodeText, UTCDateTime, UUID
 from sqlalchemy.orm import backref
 from sqlalchemy.types import Integer, Boolean
 from sqlalchemy.orm import joinedload
@@ -69,6 +69,9 @@ class ArtShowApplication(MagModel):
     agent = relationship('Attendee', foreign_keys=agent_id, cascade='save-update, merge',
                             backref=backref('art_agent_applications', cascade='save-update, merge'))
     agent_code = Column(UnicodeText)
+    checked_in = Column(UTCDateTime, nullable=True)
+    checked_out = Column(UTCDateTime, nullable=True)
+    locations = Column(UnicodeText)
     artist_name = Column(UnicodeText)
     artist_id = Column(UnicodeText, admin_only=True)
     banner_name = Column(UnicodeText)

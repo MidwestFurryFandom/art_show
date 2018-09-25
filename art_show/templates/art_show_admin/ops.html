@@ -1,0 +1,123 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% import 'artist_checkin_macros.html' as artist_checkin_macros with context %}
+{% block title %}Art Show Admin{% endblock %}
+{% block content %}
+
+<ol class="breadcrumb">
+  <li><a href="../accounts/homepage">Home</a></li>
+  <li>Art Show</li>
+  <li class="active">Admin</li>
+</ol>
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Artist Check-In/Out</h3>
+  </div>
+  <div class="panel-body">
+    <div class="row">
+      <div class="col-sm-3">
+        <a class="btn btn-default" href="form?new_app=True">Add an application</a></div>
+
+      <div class="col-sm-3 col-sm-offset-6 form-inline">
+        <div class="form-group">
+          <div class="control-label">Status</div> <div class="input-group" id="status_filter"></div>
+        </div>
+        <div class="form-group">
+          <div class="control-label">Paid</div> <span id="paid_filter"></span>
+        </div>
+      </div>
+    </div>
+    <iframe id="upload_frame" name="upload_frame" style="display:none"></iframe>
+    <div id="app_modals">
+      {% for app in applications -%}
+      {{ artist_checkin_macros.check_in_modal(app) }}
+      {%- endfor %}
+    </div>
+    <table class="table table-striped datatable">
+      <thead><tr>
+        <th>Name</th>
+        <th>Pieces Submitted</th>
+        <th>Status</th>
+        <th>General Panels</th>
+        <th>General Tables</th>
+        <th>Mature Panels</th>
+        <th>Mature Tables</th>
+        <th>Paid</th>
+        <th>Admin Notes</th>
+        <th>Check-In/Out</th>
+      </tr></thead>
+      {% for app in applications %}
+      <tr class="app-row" data-app_id="{{ app.id }}">
+        <td style="text-align:left" data-order="{{ app.attendee.full_name }}" data-search="{{ app.attendee.full_name }}"> <a href="form?id={{ app.id }}">{{ app.attendee.full_name|default("?????") }}{% if app.artist_name %} ({{ app.artist_name }}){% endif %}</a> </td>
+        <td>{% if app.incomplete_reason or app.is_unpaid %}N/A{% else %}
+          {{ app.art_show_pieces|length }} (<a href="pieces?id={{ app.id }}">View</a>){% endif %}</td>
+        <td>{{ app.status_label }}</td>
+        <td>{{ app.panels }}</td>
+        <td>{{ app.tables }}</td>
+        <td>{{ app.panels_ad }}</td>
+        <td>{{ app.tables_ad }}</td>
+        <td>{% if app.status == c.APPROVED %}{{ app.is_unpaid|yesno('No,Yes') }}
+          {% else %}N/A ({{ app.incomplete_reason }}){% endif %}</td>
+        <td>{{ app.admin_notes }}</td>
+        <td><div style="display:none;">
+
+        </div>
+          {% if not app.checked_in %}
+          <button type="button" class="btn btn-primary open_modal">Check-In Artist</button>
+          {% else %}
+          <button type="button" class="btn btn-primary open_modal">Check-Out Artist</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      <caption align="bottom">
+        <ul class="pagination"></ul>
+      </caption>
+    </table>
+    <script type="text/javascript">
+        var openModal = function(e) {
+            e.preventDefault();
+            var id = $(this).closest('.app-row').data('app_id');
+            $('#app_'+id).modal();
+        };
+
+        $(document).ready(function() {
+            $('.open_modal').on('click', openModal);
+            $('.action').on('click', function() {
+                $("#action_or_no_action").val(1);
+            });
+            $('.no_action').on('click', function() {
+                $("#action_or_no_action").val('');
+            });
+
+            $('#app_modals').find('form').submit(function(e) {
+                $(this).find('.save_app').prop('disabled', true);
+                return true;
+            });
+
+            $('#upload_frame').load(function() {
+                try {
+                    var responseText = $(this.contentDocument.body).text().trim();
+                    this.contentDocument.body.innerHTML = '';
+                    if (responseText) {
+                        try {
+                            var response = $.parseJSON(responseText);
+                            if (!response['error']) {
+                                var $modals = $('#app_modals').find('.modal');
+                                $modals.modal('hide');
+                                location.href = '?message='+response['success'];
+                            } else {
+                                toastr.error('', response['error'], {timeOut: 5000});
+                            }
+                        } catch(ex) {
+                            toastr.error('', 'There was an error saving the app: ' + responseText.substring(0, 1024), {timeOut: 5000});
+                        }
+                    }
+                } finally {
+                    $('#app_modals').find('.save_app').prop('disabled', false);
+                }
+            });
+
+        });
+    </script>
+    {% endblock %}

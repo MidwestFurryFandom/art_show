@@ -16,6 +16,7 @@ c.ACCESS_VARS.extend(c.ART_SHOW_ACCESS_LEVEL_VARS)
 c.MENU.append_menu_item(MenuItem(name='Art Show', access=c.ART_SHOW, submenu=[
     MenuItem(name='Applications', href='../art_show_admin/'),
     MenuItem(name='Link to Apply', href='../art_show_applications/'),
+    MenuItem(name='At-Con Operations', href='../art_show_applications/ops'),
     MenuItem(name='Sales Charge Form',
              href='../art_show_admin/sales_charge_form'),
                                  ]))

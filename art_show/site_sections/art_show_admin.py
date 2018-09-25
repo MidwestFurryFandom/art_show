@@ -2,10 +2,10 @@ import cherrypy
 from sqlalchemy import or_, and_
 
 from uber.config import c
-from uber.decorators import all_renderable, credit_card, unrestricted
+from uber.decorators import ajax, all_renderable, credit_card, unrestricted
 from uber.errors import HTTPRedirect
-from uber.models import Tracking, ArbitraryCharge
-from uber.utils import Charge, check
+from uber.models import Attendee, Tracking, ArbitraryCharge
+from uber.utils import Charge, check, localized_now
 
 
 @all_renderable(c.ART_SHOW)
@@ -69,6 +69,74 @@ class Root:
                      Tracking.fk_id == id)))
                 .order_by(Tracking.when).all()
         }
+
+    def ops(self, session, message=''):
+        attendee_attrs = session.query(Attendee.id, Attendee.full_name,
+                                       Attendee.badge_type, Attendee.badge_num) \
+            .filter(Attendee.first_name != '',
+                    Attendee.badge_status not in [c.INVALID_STATUS,
+                                                  c.WATCHED_STATUS])
+
+        attendees = [
+            (id, '{} - {}{}'.format(name.title(), c.BADGES[badge_type],
+                                    ' #{}'.format(
+                                        badge_num) if badge_num else ''))
+            for id, name, badge_type, badge_num in attendee_attrs]
+
+        return {
+            'message': message,
+            'applications': session.art_show_apps(),
+            'all_attendees': sorted(attendees, key=lambda tup: tup[1]),
+        }
+
+    @ajax
+    def save_and_check_in_out(self, session, **params):
+        app = session.art_show_application(params['app_id'])
+        attendee = app.attendee
+
+        app.apply(params, restricted=False)
+
+        message = check(app)
+        if message:
+            session.rollback()
+            return {'error': message}
+        else:
+            if 'check_in' in params and params['check_in']:
+                app.checked_in = localized_now()
+            if 'check_out' in params and params['check_out']:
+                app.checked_out = localized_now()
+            session.commit()
+
+        attendee.apply(params, restricted=False)
+
+        message = check(attendee)
+        if message:
+            session.rollback()
+            return {'error': message}
+        else:
+            session.commit()
+
+        for id in params['piece_ids']:
+            piece = session.art_show_piece(id)
+            piece_params = dict()
+            for field_name in ['gallery', 'status', 'name', 'opening_bid', 'quick_sale_price']:
+                piece_params[field_name] = params.get('{}{}'.format(field_name, id), '')
+
+            piece_params['for_sale'] = True if piece_params['opening_bid'] else False
+            piece_params['no_quick_sale'] = False if piece_params['quick_sale_price'] else True
+
+            piece.apply(piece_params, restricted=False)
+            message = check(piece)
+            if message:
+                session.rollback()
+                break
+            else:
+                if 'check_in' in params and params['check_in'] and piece.status == c.EXPECTED:
+                    piece.status = c.HUNG
+                session.commit() # We save as we go so it's less annoying if there's an error
+
+        return {'error': message,
+                'success': 'Application updated'}
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',
