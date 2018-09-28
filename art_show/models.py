@@ -83,6 +83,13 @@ class ArtShowApplication(MagModel):
     tables = Column(Integer, default=0)
     tables_ad = Column(Integer, default=0)
     description = Column(UnicodeText)
+    business_name = Column(UnicodeText)
+    zip_code = Column(UnicodeText)
+    address1 = Column(UnicodeText)
+    address2 = Column(UnicodeText)
+    city = Column(UnicodeText)
+    region = Column(UnicodeText)
+    country = Column(UnicodeText)
     website = Column(UnicodeText)
     special_needs = Column(UnicodeText)
     status = Column(Choice(c.ART_SHOW_STATUS_OPTS), default=c.UNAPPROVED)
@@ -149,7 +156,7 @@ class ArtShowApplication(MagModel):
         if self.status != c.APPROVED:
             return self.status_label
         if self.delivery_method == c.BY_MAIL \
-                and not self.attendee.full_address:
+                and not self.address1:
             return "Mailing address required"
         if self.attendee.badge_status == c.NEW_STATUS:
             return "Missing registration info"

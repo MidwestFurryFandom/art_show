@@ -76,6 +76,24 @@ def discounted_price(app):
                "isn't even a number".format(app.overridden_price)
 
 
+@validation.ArtShowApplication
+def mailing_address_if_by_mail(app):
+    if app.status == c.APPROVED and app.delivery_method == c.BY_MAIL:
+        from uber.model_checks import _invalid_zip_code
+
+        if not app.address1:
+            return 'Please enter a street address.'
+        if not app.city:
+            return 'Please enter a city.'
+        if not app.region and app.country in ['United States', 'Canada']:
+            return 'Please enter a state, province, or region.'
+        if not app.country:
+            return 'Please enter a country.'
+        if app.country == 'United States':
+            if _invalid_zip_code(app.zip_code):
+                return 'Enter a valid zip code'
+
+
 ArtShowPiece.required = [('name', 'Name'),
                          ('for_sale','If this piece is for sale'),
                          ('gallery', 'Gallery'),

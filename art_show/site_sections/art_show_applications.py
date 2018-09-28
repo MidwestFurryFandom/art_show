@@ -142,29 +142,23 @@ class Root:
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
 
-    def mailing_address(self, session, id, message='', **params):
-        app = session.art_show_application(id)
+    def mailing_address(self, session, message='', **params):
+        app = session.art_show_application(params)
 
-        attendee = app.attendee
-        attendee.apply(params, restricted=True)
-        from uber.model_checks import _invalid_zip_code
+        if 'copy_address' in params:
+            app.address1 = app.attendee.address1
+            app.address2 = app.attendee.address2
+            app.city = app.attendee.city
+            app.region = app.attendee.region
+            app.zip_code = app.attendee.zip_code
+            app.country = app.attendee.country
 
-        if not attendee.address1:
-            message = 'Please enter a street address.'
-        if not attendee.city:
-            message = 'Please enter a city.'
-        if not attendee.region and attendee.country in ['United States', 'Canada']:
-            message = 'Please enter a state, province, or region.'
-        if not attendee.country:
-            message = 'Please enter a country.'
-        if not attendee.international and not c.AT_OR_POST_CON:
-            if _invalid_zip_code(attendee.zip_code):
-                message = 'Enter a valid zip code'
+        message = check(app)
 
         if message:
             session.rollback()
         else:
-            message = 'Mailing address updated.'
+            message = 'Mailing address added.'
 
         raise HTTPRedirect('edit?id={}&message={}', app.id, message)
 
