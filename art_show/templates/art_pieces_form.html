@@ -146,6 +146,21 @@
         <button class="btn btn-success" disabled>Print Check-In Form</button>
       </div>
     </div>
+    {% if admin_area %}
+    <div class="row text-center">
+      <br/>
+      <form method="post" action="../art_show_admin/bid_sheet_pdf" class="form-inline">
+        <label class="control-label">Piece IDs:</label>
+        <input type="hidden" name="id" value="{{ app.id }}" />
+        {{ csrf_token() }}
+        <input type="text" class="form-control" name="piece_ids" size="7" placeholder="1-2, 5, 7" />
+        <button type="submit" class="btn btn-default">Print Bid Sheets</button>
+        <p class="help-block">
+        Leave piece IDs blank to print all bid sheets for this artist.
+        </p>
+      </form>
+    </div>
+    {% endif %}
   </div>
   <div class="table-responsive">
     <table class="table table-striped datatable">
@@ -208,6 +223,14 @@
           <button type="button" class="btn btn-primary edit_piece_modal">
             <span class="glyphicon glyphicon-pencil"></span>
           </button>
+          {% endif %}
+          {% if admin_area %}
+          <form method="post" action="../art_show_admin/bid_sheet_pdf" class="form-inline">
+            <input type="hidden" name="id" value="{{ app.id }}" />
+            <input type="hidden" name="piece_id" value="{{ piece.id }}" />
+            {{ csrf_token() }}
+          <button type="submit" class="btn btn-default">Print Bid Sheet</button>
+          </form>
           {% endif %}
         </td>
       </tr>

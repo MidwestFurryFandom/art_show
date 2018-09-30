@@ -228,6 +228,10 @@ class ArtShowPiece(MagModel):
         if not self.piece_id:
             self.piece_id = int(self.app.highest_piece_id) + 1
 
+    @property
+    def barcode_data(self):
+        return str(self.app.artist_id) + "-" + str(self.piece_id)
+
 
 @Session.model_mixin
 class Attendee:
