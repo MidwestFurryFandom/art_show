@@ -227,6 +227,9 @@ class Root:
                                    app.id, message)
             else:
                 attendee.amount_paid += charge.dollar_amount
+                app.status = c.PAID
+                if attendee.paid == c.NOT_PAID:
+                    attendee.paid = c.HAS_PAID
             session.add(attendee)
             send_email.delay(
                 c.ADMIN_EMAIL,
