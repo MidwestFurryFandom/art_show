@@ -21,7 +21,7 @@
           <input type="hidden" name="app_id" value="{{ app.id }}" />
           <input type="hidden" name="return_to" value="{{ c.PAGE_PATH }}" />
           {{ csrf_token() }}
-          {{ macros.form_group(piece, 'name', label="Piece Name", placeholder="The title of this piece", is_required=True) }}
+          {{ macros.form_group(piece, 'name', label="Piece Name", length=c.PIECE_NAME_LENGTH, placeholder="The title of this piece", is_required=True) }}
 
           <div class="form-group">
             <label class="col-sm-3 control-label">Is This Piece For Sale?</label>
@@ -41,7 +41,7 @@
           {{ macros.form_group(piece, 'type', type='radio_buttons', label="Piece Type", is_required=True) }}
 
           <div class="media">
-            {{ macros.form_group(piece, 'media', label="Original Media", placeholder="A short description of the exact media for this piece", is_required=True) }}
+            {{ macros.form_group(piece, 'media', label="Original Media", length=15, placeholder="A short description of the exact media for this piece", is_required=True) }}
           </div>
 
           <div class="print">
@@ -171,6 +171,8 @@
             <input type="hidden" name="app_id" value="{{ app.id }}" />
             <input type="hidden" name="id" value="{{ piece.id }}" />
             <input type="hidden" name="return_to" value="{{ c.PAGE_PATH }}" />
+            {% if piece.for_sale %}<input type="hidden" name="for_sale" value=1 />{% endif %}
+            {% if piece.no_quick_sale %}<input type="hidden" name="no_quick_sale" value=1 />{% endif %}
             {{ csrf_token() }}
           <select name="status" class="form-control">
             {{ options(c.ART_PIECE_STATUS_OPTS, piece.status) }}
@@ -184,7 +186,7 @@
         <td> {{ piece.media }} </td>
         <td> {{ piece.gallery_label }} </td>
         <td> {{ piece.type_label }}
-          {% if piece.print_run_num %}({{ piece.print_run_num }} of {{ piece.print_run_total }}){% endif %}
+          {% if piece.print_run_num and piece.type == c.PRINT %}({{ piece.print_run_num }} of {{ piece.print_run_total }}){% endif %}
         </td>
         <td> {% if piece.for_sale %}
           Opening Bid: {{ piece.opening_bid }}

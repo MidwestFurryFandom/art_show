@@ -84,6 +84,13 @@ ArtShowPiece.required = [('name', 'Name'),
 
 
 @validation.ArtShowPiece
+def no_duplicate_piece_names(piece):
+    with Session() as session:
+        if session.query(ArtShowPiece).iexact(name=piece.name).filter(ArtShowPiece.id != piece.id).all():
+            return "There's already a piece with that name."
+
+
+@validation.ArtShowPiece
 def print_run_if_print(piece):
     if piece.type == c.PRINT:
         if not piece.print_run_num:
@@ -94,6 +101,8 @@ def print_run_if_print(piece):
         try:
             num = int(piece.print_run_num)
             total = int(piece.print_run_total)
+            if total > 1000:
+                return "Print runs can only be 1000 prints or fewer"
             if total <= 0:
                 return "Print runs must have at least 1 print"
             if num <= 0:
@@ -128,6 +137,18 @@ def price_checks_if_for_sale(piece):
                     return "A piece must cost more than $0, even after bidding ends"
             except Exception:
                 return "What you entered for the quick sale price ({}) isn't even a number".format(piece.quick_sale_price)
+
+
+@validation.ArtShowPiece
+def name_max_length(piece):
+    if len(piece.name) > c.PIECE_NAME_LENGTH:
+        return "Piece names must be {} characters or fewer.".format(c.PIECE_NAME_LENGTH)
+
+
+@validation.ArtShowPiece
+def media_max_length(piece):
+    if len(piece.media) > 15:
+        return "The description of the piece's media must be 15 characters or fewer."
 
 
 @prereg_validation.Attendee

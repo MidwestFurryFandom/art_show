@@ -99,7 +99,7 @@ class ArtShowApplication(MagModel):
 
     @presave_adjustment
     def add_artist_id(self):
-        if self.status in [c.APPROVED, c.PAID]:
+        if self.status in [c.APPROVED, c.PAID] and not self.artist_id:
             from uber.models import Session
             with Session() as session:
                 # Kind of inefficient, but doing one big query for all the existing
