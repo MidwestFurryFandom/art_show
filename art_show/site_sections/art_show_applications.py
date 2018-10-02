@@ -153,7 +153,19 @@ class Root:
             app.zip_code = app.attendee.zip_code
             app.country = app.attendee.country
 
-        message = check(app)
+        from uber.model_checks import _invalid_zip_code
+
+        if not app.address1:
+            message = 'Please enter a street address.'
+        if not app.city:
+            message = 'Please enter a city.'
+        if not app.region and app.country in ['United States', 'Canada']:
+            message = 'Please enter a state, province, or region.'
+        if not app.country:
+            message = 'Please enter a country.'
+        if app.country == 'United States':
+            if _invalid_zip_code(app.zip_code):
+                message = 'Enter a valid zip code'
 
         if message:
             session.rollback()
