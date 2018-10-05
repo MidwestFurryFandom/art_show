@@ -1,27 +1,26 @@
-{% set readonly = ' disabled ' if app.status != c.UNAPPROVED and not admin_area else '' %}
-{% set no_help_text = app.status != c.UNAPPROVED or admin_area %}
+{% set readonly = app.status != c.UNAPPROVED and not admin_area %}
 {% set max_tables = c.MAX_ART_TABLES if not admin_area else 30 %}
 {% set max_panels = c.MAX_ART_PANELS if not admin_area else 30 %}
-<div class="form-group">
-  <label for="artist_name" class="col-sm-3 control-label optional-field">Artist Name</label>
-  <div class="col-sm-6">
-    <input class="form-control" type="text" name="artist_name" value="{{ app.artist_name }}" size="40" {{ readonly }}/>
-  </div>
-  {% if not no_help_text %}
-  <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">The name you want to use with your artwork, if different from your
-    first and last name.</p>
-  {% endif %}
-</div>
+
+{{ macros.form_group(app, 'artist_name', label="Artist Name",
+help="The name you want to use with your artwork, if different from your first and last name." if not admin_area else "",
+placeholder=app.attendee.full_name, is_readonly=readonly) }}
+
 
 <div class="form-group">
-  <label for="delivery_method" class="col-sm-3 control-label">Art Delivery</label>
+  <label for="delivery_method" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">Art Delivery</label>
   <div class="col-sm-6">
-    <select name="delivery_method" class="form-control"{{ readonly }}>
+    {% if readonly %}
+    <div class="form-control-static">
+      {{ app.delivery_method_label }}
+    </div>
+    {% else %}
+    <select name="delivery_method" class="form-control">
       {{ options(c.ART_SHOW_DELIVERY_OPTS,app.delivery_method) }}
     </select>
+    {% endif %}
   </div>
-  {% if not no_help_text %}
+  {% if not readonly and not admin_area %}
   <div class="clearfix"></div>
   <p class="help-block col-sm-6 col-sm-offset-3">Mailing your art to the show incurs a fee of ${{ c.ART_MAILING_FEE }}.</p>
   {% endif %}
@@ -29,8 +28,9 @@
 
 {% if app.agent_code and app.delivery_method == c.AGENT %}
 <div class="form-group">
-  <label for="agent_code" class="col-sm-3 control-label">Agent</label>
+  <label for="agent_code" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">Agent</label>
   <div class="col-sm-6">
+    {% if readonly %}<div class="form-control-static">{% endif %}
     {% if app.agent %}
       {{ app.agent.full_name }} is currently assigned as your agent.
     {% else %}
@@ -39,25 +39,29 @@
     can enter this code while preregistering for {{ c.EVENT_NAME }}, or after
     registering by using their registration confirmation link.
     {% endif %}
+    {% if not readonly %}
     <input type="hidden" name="id" form="new_agent" value="{{ app.id }}" />
     <br/><button type="submit" form="new_agent" class="btn btn-primary">Assign New Agent</button>
+    {% else %}</div>{% endif %}
   </div>
 </div>
 {% endif %}
 
 <div class="form-group">
-  <label for="panels" class="col-sm-3 control-label">General Panels</label>
+  <label for="panels" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">General Panels</label>
   <div class="col-sm-6">
     {% if app.panels and app.panels > max_panels and not admin_area %}
       <div class="form-control-static">An admin has granted you {{ app.panels }} general panels. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
       if you wish to change the number of panels on your application.</div>
+    {% elif readonly %}
+      <div class="form-control-static">{{ app.panels }}</div>
     {% else %}
-      <select class="form-control" name="panels"{{ readonly }}>
+      <select class="form-control" name="panels">
         {{ int_options(0, max_panels, app.panels) }}
-      </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
-      {% endif %}
+      </select>(${{ c.COST_PER_PANEL }} per panel)
+    {% endif %}
     </div>
-    {% if not no_help_text and app.panels < max_panels %}
+    {% if not readonly and not admin_area and app.panels < max_panels %}
     <div class="clearfix"></div>
     <p class="help-block col-sm-6 col-sm-offset-3">
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
@@ -66,19 +70,20 @@
 </div>
 
 <div class="form-group">
-  <label for="tables" class="col-sm-3 control-label">General Table Sections</label>
+  <label for="tables" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">General Table Sections</label>
   <div class="col-sm-6">
     {% if app.tables and app.tables > max_tables and not admin_area %}
       <div class="form-control-static">An admin has granted you {{ app.tables }} general table sections. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
       if you wish to change the number of table sections on your application.</div>
+    {% elif readonly %}
+      <div class="form-control-static">{{ app.tables }}</div>
     {% else %}
-      <select class="form-control" name="tables"{{ readonly }}>
+      <select class="form-control" name="tables">
         {{ int_options(0, max_tables, app.tables) }}
-      </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table section){% endif %}
-
+      </select>(${{ c.COST_PER_TABLE }} per table section)
     {% endif %}
     </div>
-    {% if not no_help_text and app.tables < max_tables %}
+    {% if not readonly and not admin_area and app.tables < max_tables %}
     <div class="clearfix"></div>
     <p class="help-block col-sm-6 col-sm-offset-3">
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
@@ -87,18 +92,20 @@
 </div>
 
 <div class="form-group">
-  <label for="panels" class="col-sm-3 control-label">Mature Panels</label>
+  <label for="panels" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">Mature Panels</label>
   <div class="col-sm-6">
     {% if app.panels_ad and app.panels_ad > max_panels and not admin_area %}
       <div class="form-control-static">An admin has granted you {{ app.panels_ad }} mature panels. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
       if you wish to change the number of panels on your application.</div>
+    {% elif readonly %}
+      <div class="form-control-static">{{ app.panels_ad }}</div>
     {% else %}
-      <select class="form-control" name="panels_ad"{{ readonly }}>
+      <select class="form-control" name="panels_ad">
         {{ int_options(0, max_panels, app.panels_ad) }}
       </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
       {% endif %}
     </div>
-    {% if not no_help_text and app.panels_ad < max_panels %}
+    {% if not readonly and not admin_area and app.panels_ad < max_panels %}
     <div class="clearfix"></div>
     <p class="help-block col-sm-6 col-sm-offset-3">
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
@@ -107,19 +114,20 @@
 </div>
 
 <div class="form-group">
-  <label for="tables" class="col-sm-3 control-label">Mature Table Sections</label>
+  <label for="tables" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">Mature Table Sections</label>
   <div class="col-sm-6">
     {% if app.tables_ad and app.tables_ad > max_tables and not admin_area %}
       <div class="form-control-static">An admin has granted you {{ app.tables_ad }} mature table sections. Please contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
       if you wish to change the number of table sections on your application.</div>
+    {% elif readonly %}
+      <div class="form-control-static">{{ app.tables_ad }}</div>
     {% else %}
-      <select class="form-control" name="tables_ad"{{ readonly }}>
+      <select class="form-control" name="tables_ad">
         {{ int_options(0, max_tables, app.tables_ad) }}
       </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table section){% endif %}
-
     {% endif %}
     </div>
-    {% if not no_help_text and app.tables_ad < max_tables %}
+    {% if not readonly and not admin_area and app.tables_ad < max_tables %}
     <div class="clearfix"></div>
     <p class="help-block col-sm-6 col-sm-offset-3">
       <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
@@ -127,31 +135,6 @@
     {% endif %}
 </div>
 
-<div class="form-group">
-  <label for="description" class="col-sm-3 control-label">Description</label>
-  <div class="col-sm-6">
-    <textarea class="form-control" name="description" rows="4" maxlength="400"{{ readonly }}>{{ app.description }}</textarea>
-  </div>
-  {% if not no_help_text %}
-  <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">A short description of your artwork.</p>
-  {% endif %}
-</div>
-
-<div class="form-group">
-  <label for="website" class="col-sm-3 control-label">Website URL</label>
-  <div class="col-sm-6">
-    <input class="form-control" type="text" name="website" value="{{ app.website }}" size="40" {{ readonly }}/>
-  </div>
-</div>
-
-<div class="form-group">
-  <label for="special_needs" class="col-sm-3 control-label optional-field">Special Requests</label>
-  <div class="col-sm-6">
-    <textarea class="form-control" name="special_needs" rows="4"{{ readonly }} placeholder="Notes to the Art Show director">{{ app.special_needs }}</textarea>
-  </div>
-  {% if not no_help_text %}
-  <div class="clearfix"></div>
-  <p class="help-block col-sm-6 col-sm-offset-3">We cannot guarantee that we will accommodate all requests.</p>
-  {% endif %}
-</div>
+{{ macros.form_group(app, 'description', type="textarea", label="Description", help="A short description of your artwork." if not admin_area else "", is_readonly=readonly) }}
+{{ macros.form_group(app, 'website', label="Website URL", is_readonly=readonly) }}
+{{ macros.form_group(app, 'special_needs', type="textarea", label="Special Requests", help="We cannot guarantee that we will accommodate all requests." if not admin_area else "", is_readonly=readonly) }}
