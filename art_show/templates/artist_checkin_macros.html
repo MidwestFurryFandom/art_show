@@ -77,31 +77,8 @@
 {{ macros.name_form_group(app.attendee, label="Artist Full Name", is_readonly=printable) }}
 {{ macros.form_group(app.attendee, 'legal_name', label="Artist Legal Name", placeholder="Name exactly as it appears on Photo ID", is_readonly=printable) }}
 
-{% if printable %}
-{{ macros.address_form(app.attendee, label_prefix="Artist", is_readonly=True) }}
-{% else %}
-<script type="text/javascript">
-    {% include "region_opts.html" %}
-
-    var setInternational = function () {
-        countryName = $.field('country').val();
-        if(countryName == 'United States') {
-            $.field('international').prop('checked', false);
-        } else {
-            $.field('international').prop('checked', true);
-        }
-    };
-    $(function () {
-        $.field('international').parents('.checkbox').hide();
-    });
-</script>
-<style>
-  .ui-front {
-    z-index: 9999999;}
-</style>
-{{ macros.address_form(app.attendee, label_prefix="Artist", update_international=True) }}
-<div class="checkbox col-sm-6 col-sm-offset-3">{{ macros.checkbox(app.attendee, 'international', label="I'm coming from outside the US.") }}</div>
-{% endif %}
+<script type="text/javascript">{% include "region_opts.html" %}</script>
+{{ macros.address_form(app.attendee, label_prefix="Artist", is_readonly=printable) }}
 
 {% if app.delivery_method == c.BY_MAIL %}
   {% if not app.business_name and printable %}

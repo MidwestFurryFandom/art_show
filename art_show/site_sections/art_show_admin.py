@@ -116,6 +116,11 @@ class Root:
 
         attendee.apply(params, restricted=False)
 
+        if c.COLLECT_FULL_ADDRESS and attendee.country == 'United States':
+            attendee.international = False
+        elif c.COLLECT_FULL_ADDRESS:
+            attendee.international = True
+
         message = check(attendee)
         if message:
             session.rollback()
@@ -123,7 +128,7 @@ class Root:
         else:
             session.commit()
 
-        for id in params['piece_ids']:
+        for id in params.get('piece_ids', []):
             piece = session.art_show_piece(id)
             piece_params = dict()
             for field_name in ['gallery', 'status', 'name', 'opening_bid', 'quick_sale_price']:
