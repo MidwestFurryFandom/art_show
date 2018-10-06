@@ -135,6 +135,6 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
     {% endif %}
 </div>
 
-{{ macros.form_group(app, 'description', type="textarea", label="Description", help="A short description of your artwork." if not admin_area else "", is_readonly=readonly) }}
-{{ macros.form_group(app, 'website', label="Website URL", is_readonly=readonly) }}
+{{ macros.form_group(app, 'description', type="textarea", label="Description", help="A short description of your artwork." if not admin_area else "", is_readonly=readonly, is_required=True) }}
+{{ macros.form_group(app, 'website', label="Website URL", is_readonly=readonly, is_required=True) }}
 {{ macros.form_group(app, 'special_needs', type="textarea", label="Special Requests", help="We cannot guarantee that we will accommodate all requests." if not admin_area else "", is_readonly=readonly) }}
