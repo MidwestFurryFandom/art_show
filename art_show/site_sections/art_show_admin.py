@@ -204,7 +204,7 @@ class Root:
             pdf.image(os.path.join(config['module_root'], 'bidsheet.png'), x=0 + xplus, y=0 + yplus, w=306)
             pdf.set_font("Arial", size=10)
             pdf.set_xy(81 + xplus, 27 + yplus)
-            pdf.cell(80, 16, txt=piece.locations, ln=1, align="C")
+            pdf.cell(80, 16, txt=piece.app.locations, ln=1, align="C")
             pdf.set_font("Arial", size=8, style='B')
             pdf.set_xy(163 + xplus, 14 + yplus)
             pdf.cell(132, 12, txt=piece.barcode_data, ln=1, align="C")
