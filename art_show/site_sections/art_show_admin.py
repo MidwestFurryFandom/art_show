@@ -170,6 +170,8 @@ class Root:
     def bid_sheet_pdf(self, session, id, **params):
         import fpdf
 
+        app = session.art_show_application(id)
+
         if 'piece_id' in params:
             pieces = [session.art_show_piece(params['piece_id'])]
         elif 'piece_ids' in params and params['piece_ids']:
@@ -183,9 +185,11 @@ class Root:
                 ), params['piece_ids']
             )
             id_list = [id.strip() for id in expanded_ids.split(',')]
-            pieces = session.query(ArtShowPiece).filter(ArtShowPiece.piece_id.in_(id_list)).all()
+            pieces = session.query(ArtShowPiece)\
+                .filter(ArtShowPiece.piece_id.in_(id_list))\
+                .filter(ArtShowPiece.app_id == app.id)\
+                .all()
         else:
-            app = session.art_show_application(id)
             pieces = app.art_show_pieces
 
         pdf = fpdf.FPDF(unit='pt', format='letter')
