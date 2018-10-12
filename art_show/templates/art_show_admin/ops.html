@@ -84,10 +84,10 @@
         $(document).ready(function() {
             $('.open_modal').on('click', openModal);
             $('.action').on('click', function() {
-                $("#action_or_no_action").val(1);
+                $(".action_or_no_action").val(1);
             });
             $('.no_action').on('click', function() {
-                $("#action_or_no_action").val('');
+                $(".action_or_no_action").val('');
             });
 
             $('#app_modals').find('form').submit(function(e) {
