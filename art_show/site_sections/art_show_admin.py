@@ -209,12 +209,12 @@ class Root:
             pdf.set_font("Arial", size=10)
             pdf.set_xy(81 + xplus, 27 + yplus)
             pdf.cell(80, 16, txt=piece.app.locations, ln=1, align="C")
+            pdf.set_font("3of9", size=22)
+            pdf.set_xy(163 + xplus, 15 + yplus)
+            pdf.cell(132, 22, txt=piece.barcode_data, ln=1, align="C")
             pdf.set_font("Arial", size=8, style='B')
-            pdf.set_xy(163 + xplus, 14 + yplus)
+            pdf.set_xy(163 + xplus, 32 + yplus)
             pdf.cell(132, 12, txt=piece.barcode_data, ln=1, align="C")
-            pdf.set_font("3of9", size=12)
-            pdf.set_xy(163 + xplus, 27 + yplus)
-            pdf.cell(132, 16, txt=piece.barcode_data, ln=1, align="C")
 
             # Artist, Title, Media
             pdf.set_font("Arial", size=12)
