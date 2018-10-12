@@ -170,6 +170,8 @@ class Root:
     def bid_sheet_pdf(self, session, id, **params):
         import fpdf
 
+        app = session.art_show_application(id)
+
         if 'piece_id' in params:
             pieces = [session.art_show_piece(params['piece_id'])]
         elif 'piece_ids' in params and params['piece_ids']:
@@ -183,9 +185,11 @@ class Root:
                 ), params['piece_ids']
             )
             id_list = [id.strip() for id in expanded_ids.split(',')]
-            pieces = session.query(ArtShowPiece).filter(ArtShowPiece.piece_id.in_(id_list)).all()
+            pieces = session.query(ArtShowPiece)\
+                .filter(ArtShowPiece.piece_id.in_(id_list))\
+                .filter(ArtShowPiece.app_id == app.id)\
+                .all()
         else:
-            app = session.art_show_application(id)
             pieces = app.art_show_pieces
 
         pdf = fpdf.FPDF(unit='pt', format='letter')
@@ -205,12 +209,12 @@ class Root:
             pdf.set_font("Arial", size=10)
             pdf.set_xy(81 + xplus, 27 + yplus)
             pdf.cell(80, 16, txt=piece.app.locations, ln=1, align="C")
+            pdf.set_font("3of9", size=22)
+            pdf.set_xy(163 + xplus, 15 + yplus)
+            pdf.cell(132, 22, txt=piece.barcode_data, ln=1, align="C")
             pdf.set_font("Arial", size=8, style='B')
-            pdf.set_xy(163 + xplus, 14 + yplus)
+            pdf.set_xy(163 + xplus, 32 + yplus)
             pdf.cell(132, 12, txt=piece.barcode_data, ln=1, align="C")
-            pdf.set_font("3of9", size=12)
-            pdf.set_xy(163 + xplus, 27 + yplus)
-            pdf.cell(132, 16, txt=piece.barcode_data, ln=1, align="C")
 
             # Artist, Title, Media
             pdf.set_font("Arial", size=12)
@@ -234,10 +238,10 @@ class Root:
             pdf.cell(53, 24, txt=piece.type_label, ln=1, align="C")
             pdf.set_font("Arial", size=8)
             pdf.set_xy(242 + xplus, 90 + yplus)
-            pdf.cell(53, 14, txt=('${:,.2f}'.format(piece.opening_bid)) if piece.for_sale else 'N/A', ln=1)
+            pdf.cell(53, 14, txt=('${:,.2f}'.format(piece.opening_bid)) if piece.valid_for_sale else 'N/A', ln=1)
             pdf.set_xy(242 + xplus, 116 + yplus)
             pdf.cell(
-                53, 14, txt=('${:,.2f}'.format(piece.quick_sale_price)) if not piece.no_quick_sale else 'N/A', ln=1)
+                53, 14, txt=('${:,.2f}'.format(piece.quick_sale_price)) if piece.valid_quick_sale else 'N/A', ln=1)
 
 
         cherrypy.response.headers['Content-Disposition'] = 'attachment; filename=bidsheets.pdf'

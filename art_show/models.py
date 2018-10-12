@@ -242,6 +242,13 @@ class ArtShowPiece(MagModel):
     def barcode_data(self):
         return str(self.app.artist_id) + "-" + str(self.piece_id)
 
+    @property
+    def valid_quick_sale(self):
+        return self.for_sale and not self.no_quick_sale and self.quick_sale_price
+
+    @property
+    def valid_for_sale(self):
+        return self.for_sale and self.opening_bid
 
 @Session.model_mixin
 class Attendee:
