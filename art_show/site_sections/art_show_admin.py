@@ -234,10 +234,10 @@ class Root:
             pdf.cell(53, 24, txt=piece.type_label, ln=1, align="C")
             pdf.set_font("Arial", size=8)
             pdf.set_xy(242 + xplus, 90 + yplus)
-            pdf.cell(53, 14, txt=('${:,.2f}'.format(piece.opening_bid)) if piece.for_sale else 'N/A', ln=1)
+            pdf.cell(53, 14, txt=('${:,.2f}'.format(piece.opening_bid)) if piece.valid_for_sale else 'N/A', ln=1)
             pdf.set_xy(242 + xplus, 116 + yplus)
             pdf.cell(
-                53, 14, txt=('${:,.2f}'.format(piece.quick_sale_price)) if not piece.no_quick_sale else 'N/A', ln=1)
+                53, 14, txt=('${:,.2f}'.format(piece.quick_sale_price)) if piece.valid_quick_sale else 'N/A', ln=1)
 
 
         cherrypy.response.headers['Content-Disposition'] = 'attachment; filename=bidsheets.pdf'

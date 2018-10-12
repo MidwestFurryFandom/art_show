@@ -27,8 +27,8 @@
 
           <div class="form-group">
             <label class="col-sm-3 control-label">Is This Piece For Sale?</label>
-            {% set is_for_sale = not is_class and piece.for_sale %}
-            {% set not_for_sale = not is_class and not piece.for_sale %}
+            {% set is_for_sale = not is_class and piece.valid_for_sale %}
+            {% set not_for_sale = not is_class and not piece.valid_for_sale %}
             <div class="btn-group btn-group-toggle col-sm-6" data-toggle="buttons">
               <label class="btn btn-default{% if is_for_sale %} active{% endif %}">
                 <input type="radio" name="for_sale" value="1" {% if is_for_sale %}checked="checked"{% endif %} autocomplete="off" required="required"> Yes
@@ -212,9 +212,9 @@
         <td> {{ piece.type_label }}
           {% if piece.print_run_num and piece.type == c.PRINT %}({{ piece.print_run_num }} of {{ piece.print_run_total }}){% endif %}
         </td>
-        <td> {% if piece.for_sale %}
+        <td> {% if piece.valid_for_sale %}
           Opening Bid: {{ piece.opening_bid }}
-          <br/>Quick Sale Price: {% if piece.no_quick_sale %}N/A{% else %}{{ piece.quick_sale_price }}{% endif %}
+          <br/>Quick Sale Price: {% if not piece.valid_quick_sale %}N/A{% else %}{{ piece.quick_sale_price }}{% endif %}
           {% else %}N/A{% endif %}
         </td>
         {% if not app.checked_in or admin_area %}
