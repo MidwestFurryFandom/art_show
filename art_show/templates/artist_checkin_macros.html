@@ -16,7 +16,7 @@
           {{ check_in_form(app) }}
         </div>
         <div class="modal-footer">
-          <input type="hidden" id="action_or_no_action" name="{{ "check_out" if app.checked_in else "check_in" }}" />
+          <input type="hidden" class="action_or_no_action" name="{{ "check_out" if app.checked_in else "check_in" }}" />
           <button type="submit" class="btn btn-primary save_app no_action">Save</button>
           {% if not app.checked_in %}
           <button type="submit" class="btn btn-success save_app action">Save & Check-In</button>
