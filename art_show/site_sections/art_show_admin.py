@@ -134,8 +134,18 @@ class Root:
             for field_name in ['gallery', 'status', 'name', 'opening_bid', 'quick_sale_price']:
                 piece_params[field_name] = params.get('{}{}'.format(field_name, id), '')
 
-            piece_params['for_sale'] = True if piece_params['opening_bid'] else False
-            piece_params['no_quick_sale'] = False if piece_params['quick_sale_price'] else True
+            # Correctly handle admins entering '0' for a price
+            try:
+                opening_bid = int(piece_params['opening_bid'])
+            except:
+                opening_bid = piece_params['opening_bid']
+            try:
+                quick_sale_price = int(piece_params['quick_sale_price'])
+            except:
+                quick_sale_price = piece_params['quick_sale_price']
+
+            piece_params['for_sale'] = True if opening_bid else False
+            piece_params['no_quick_sale'] = False if quick_sale_price else True
 
             piece.apply(piece_params, restricted=False)
             message = check(piece)

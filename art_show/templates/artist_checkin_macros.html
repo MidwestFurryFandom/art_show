@@ -170,7 +170,7 @@
       <td> {% if printable %}{{ '$' ~ piece.opening_bid if piece.valid_for_sale else "N/A" }}
         {% else %}<input type="text" class="form-control" size="10" placeholder="N/A" name="opening_bid{{ piece.id }}" value="{{ piece.opening_bid if piece.valid_for_sale else '' }}" />{% endif %}</td>
       <td> {% if printable %}{{ '$' ~ piece.quick_sale_price if piece.valid_quick_sale else "N/A" }}
-        {% else %}<input type="text" class="form-control" size="10" placeholder="N/A" name="quick_sale_price{{ piece.id }}" value="{{ piece.quick_sale_price if not piece.valid_quick_sale else '' }}" />{% endif %}
+        {% else %}<input type="text" class="form-control" size="10" placeholder="N/A" name="quick_sale_price{{ piece.id }}" value="{{ piece.quick_sale_price if piece.valid_quick_sale else '' }}" />{% endif %}
       </td>
     </tr>
     {% endfor %}
