@@ -299,3 +299,13 @@ class Attendee:
                 if app.total_cost and app.status != c.PAID:
                     return '../art_show_applications/edit?id={}'.format(app.id)
         return 'attendee_donation_form?id={}'.format(self.id)
+
+class ArtShowBidder(MagModel):
+    attendee_id = Column(UUID, ForeignKey('attendee.id', ondelete='SET NULL'),
+                         nullable=True)
+    attendee = relationship('Attendee', foreign_keys=attendee_id, cascade='save-update, merge',
+                                  backref=backref('art_show_bidder', cascade='save-update, merge'))
+    bidder_num = Column(UnicodeText)
+    hotel_name = Column(UnicodeText)
+    hotel_room_num = Column(UnicodeText)
+    admin_notes = Column(UnicodeText)

@@ -2,6 +2,7 @@ import cherrypy
 import treepoem
 import os
 import re
+import math
 
 from sqlalchemy import or_, and_
 from io import BytesIO
@@ -10,7 +11,7 @@ from uber.config import c
 from uber.decorators import ajax, all_renderable, credit_card, unrestricted
 from uber.errors import HTTPRedirect
 from uber.models import Attendee, Tracking, ArbitraryCharge
-from uber.utils import Charge, check, localized_now
+from uber.utils import Charge, check, localized_now, Order
 
 from art_show.config import config
 from art_show.models import ArtShowPiece
@@ -246,6 +247,49 @@ class Root:
 
         cherrypy.response.headers['Content-Disposition'] = 'attachment; filename=bidsheets.pdf'
         return pdf.output(dest='S').encode('latin-1')
+
+    def bidder_signup(self, session, message='', page='0', search_text='', uploaded_id='', order='badge_printed_name'):
+        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        search_text = search_text.strip()
+        if search_text:
+            try:
+                badge_num = int(search_text)
+            except:
+                filters.append(Attendee.badge_printed_name.ilike('%{}%'.format(search_text)))
+            else:
+                filters.append(or_(Attendee.badge_num == badge_num,
+                                   Attendee.badge_printed_name.ilike('%{}%'.format(search_text))))
+
+            attendees = session.search('', *filters)
+            count = attendees.count()
+
+            attendees = attendees.order(order)
+
+            page = int(page) or 1
+
+            if not count:
+                message = 'No matches found'
+
+            pages = range(1, int(math.ceil(count / 100)) + 1)
+            attendees = attendees[-100 + 100*page: 100*page]
+
+            return {
+                'message':        message,
+                'page':           page,
+                'pages':          pages,
+                'search_text':    search_text,
+                'search_results': bool(search_text),
+                'attendees':      attendees,
+                'order':          Order(order),
+            }
+
+        return {
+            'message': message,
+            'page': 0,
+            'pages': [],
+            'order': Order(order),
+            'attendee': session.attendee(uploaded_id, allow_invalid=True) if uploaded_id else None,
+        }
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',
