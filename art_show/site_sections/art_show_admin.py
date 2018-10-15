@@ -302,6 +302,9 @@ class Root:
             bidder.apply(params, restricted=False)
             attendee.art_show_bidder = bidder
 
+        if params['complete']:
+            bidder.signed_up = localized_now()
+
         message = check(bidder)
         if message:
             session.rollback()
@@ -310,6 +313,8 @@ class Root:
             session.commit()
 
         return {'id': bidder.id,
+                'attendee_id': attendee.id,
+                'bidder_num': bidder.bidder_num,
                 'error': message,
                 'success': 'Bidder signup complete'}
 

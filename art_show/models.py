@@ -1,6 +1,8 @@
 import random
 import string
 
+from sqlalchemy import func
+
 from uber.config import c
 from uber.models import Session
 from uber.models import MagModel
@@ -9,9 +11,9 @@ from uber.models.types import Choice, DefaultColumn as Column,\
     default_relationship as relationship
 
 from residue import CoerceUTF8 as UnicodeText, UTCDateTime, UUID
-from sqlalchemy.orm import backref
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import backref, joinedload
 from sqlalchemy.types import Integer, Boolean
-from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import ForeignKey, Index
 
 
@@ -306,3 +308,24 @@ class ArtShowBidder(MagModel):
     hotel_name = Column(UnicodeText)
     hotel_room_num = Column(UnicodeText)
     admin_notes = Column(UnicodeText)
+    signed_up = Column(UTCDateTime, nullable=True)
+
+    @presave_adjustment
+    def add_bidder_num(self):
+        if not self.bidder_num:
+            from uber.models import Session
+            with Session() as session:
+                latest_bidder = session.query(
+                    ArtShowBidder).order_by(ArtShowBidder.bidder_num_stripped.desc()).first()
+
+                next_num = str(min(latest_bidder.bidder_num_stripped + 1, 9999)).zfill(4) if latest_bidder else "0001"
+
+            self.bidder_num = self.attendee.last_name[:1].upper() + "-" + next_num
+
+    @hybrid_property
+    def bidder_num_stripped(self):
+        return int(self.bidder_num[2:]) if self.bidder_num else 0
+
+    @bidder_num_stripped.expression
+    def bidder_num_stripped(cls):
+        return func.cast("0" + func.substr(cls.bidder_num, 3, func.length(cls.bidder_num)), Integer)

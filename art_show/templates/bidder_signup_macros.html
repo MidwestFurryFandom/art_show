@@ -15,6 +15,7 @@
           {{ sign_up_form(attendee) }}
         </div>
         <div class="modal-footer">
+          <input type="hidden" name="complete" class="complete" />
           <button type="submit" class="btn btn-primary save_bidder print">Save & Print Form</button>
           <button type="submit" class="btn btn-success save_bidder">Complete Signup</button>
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -29,7 +30,7 @@
 
 <div class="pull-right form-control-static" style="padding-top:0;">
   <label class="control-label optional-field">Bidder Number</label>
-    Bidder #
+  <span class="bidder_num">{{ attendee.art_show_bidder.bidder_num }}</span>
 </div>
 <div class="clearfix"><input type="hidden" name="attendee_id" value="{{ attendee.id }}" /></div>
 <input type="hidden" name="id" value="{{ attendee.art_show_bidder.id }}" />
@@ -40,9 +41,7 @@
 
 {{ macros.form_group(attendee.art_show_bidder, 'hotel_name', label="Hotel", is_readonly=printable) }}
 {{ macros.form_group(attendee.art_show_bidder, 'hotel_room_num', label="Room Number", is_readonly=printable) }}
-{% if not printable %}
-{{ macros.form_group(attendee.art_show_bidder, 'admin_notes', label="Notes") }}
-{% endif %}
+{{ macros.form_group(attendee.art_show_bidder, 'admin_notes', label="Notes", is_readonly=printable) }}
 
 {% if printable %}
 <br/>

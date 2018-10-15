@@ -73,17 +73,21 @@
       {% if c.PREASSIGNED_BADGE_TYPES %}<td>{{ attendee.badge_printed_name }}</td>{% endif %}
       {% if c.NUMBERED_BADGES %}<td>{{ attendee.badge_num }}</td>{% endif %}
       <td>
-        {% if attendee.art_show_app %}
-        <a href="form?id={{ attendee.art_show_app.id }}">{{ attendee.art_show_app.artist_name }}</a>
+        {% for app in attendee.art_show_applications %}
+        <a href="form?id={{ app.id }}">{{ app.banner_name or app.artist_name or attendee.full_name }}</a>
         {% else %}
         N/A
-        {% endif %}
+        {% endfor %}
       </td>
-      {% if not attendee.checked_in and c.AT_THE_CON %}
+      {% if attendee.art_show_bidder and attendee.art_show_bidder.signed_up %}
+        <td><em>Already signed up as bidder #{{ attendee.art_show_bidder.bidder_num }}
+          <br/>at {{ attendee.art_show_bidder.signed_up|datetime_local }}</em></td>
+      {% elif not attendee.checked_in and c.AT_THE_CON %}
       <td>Attendee not checked in!</td>
       {% else %}
       <td id="cin_{{ attendee.id }}">
-        <button class="btn btn-primary open_modal" data-attendee-id="{{ attendee.id }}">Sign Up</button>
+        {% if attendee.art_show_bidder %}<em>Bidder #{{ attendee.art_show_bidder.bidder_num }}</em>{% endif %}
+        <button class="btn btn-primary open_modal" data-attendee-id="{{ attendee.id }}">{% if attendee.art_show_bidder %}Complete {% endif %}Sign Up</button>
       </td>
       {% endif %}
       {% endblock tablerows %}
@@ -93,9 +97,7 @@
   </table>
   {% else %}
   <div class="lead text-center">
-    <em>Use the search box above to filter the attendees or select a page to browse all attendees.</em>
-    <br/><br/>Try searching for 'email:name@example.com' or 'group:Group Name'. You can also search by phone number,
-    unique confirmation ID, and most text fields.
+    <em>Use the search box above to search for attendees by badge number or badge name.</em>
   </div>
   {% endif %}
 </div>
@@ -130,14 +132,20 @@
         e.preventDefault();
         var id = $(this).closest('.attendee-row').data('attendee_id');
         $('#bidder_modals').find('.modal').removeClass('print_form');
-        $('#attendee_'+id).addClass('print_form').modal();
+        $('#attendee_'+id).modal();
     };
 
     $(document).ready(function() {
         var print = false;
         $('.open_modal').on('click', openModal);
         $('.save_bidder').on('click', function() {
-            print = $(this).hasClass('print');
+            if ($(this).hasClass('print')) {
+                print = true;
+                $(".complete").val('');
+            } else {
+                print = false;
+                $(".complete").val(1);
+            }
         });
 
         $('#bidder_modals').find('form').submit(function(e) {
@@ -158,10 +166,11 @@
                             if (print) {
                                 window.open('', 'print_form_target', 'width=400,height=400,resizeable,scrollbars');
                                 $('#print_id').val(response['id']);
-                                $('#print_form').attr('target', 'print_form_target').submit()
+                                $('#print_form').attr('target', 'print_form_target').submit();
+                                $('#attendee_'+response['attendee_id']).find('.bidder_num').text(response['bidder_num']);
                             } else {
                                 $modals.modal('hide');
-                                location.href = '?search_text={{ search_text|urlencode }}&message='+response['success'];
+                                location.href = '?search_text={{ search_text|urlencode if search_text }}&message='+response['success'];
                             }
                         } else {
                             toastr.error('', response['error'], {timeOut: 5000});
