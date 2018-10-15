@@ -1,4 +1,5 @@
 {% extends "base.html" %}{% set admin_area=True %}
+{% import 'bidder_signup_macros.html' as bidder_signup_macros with context %}
 {% block title %}Bidder Signup{% endblock %}
 {% block content %}
 
@@ -56,7 +57,7 @@
     </thead>
     <tbody>
     {% for attendee in attendees %}
-    <tr {% if attendee.badge_status == c.INVALID_STATUS %}bgcolor="#FFE4E1"{% endif %}>
+    <tr class="attendee-row" data-attendee_id="{{ attendee.id }}"{% if attendee.badge_status == c.INVALID_STATUS %} bgcolor="#FFE4E1"{% endif %}>
       {% block tablerows scoped %}
       <td id="group_{{ attendee.id }}">
         {% if attendee.group %}
@@ -78,13 +79,11 @@
         N/A
         {% endif %}
       </td>
-      {% if attendee.art_show_bidder %}
-      <td>{{ attendee.art_show_bidder.bidder_num }}</td>
-      {% elif not attendee.checked_in and c.AT_THE_CON %}
+      {% if not attendee.checked_in and c.AT_THE_CON %}
       <td>Attendee not checked in!</td>
       {% else %}
       <td id="cin_{{ attendee.id }}">
-        <button class="attendee-checkin btn btn-primary" data-attendee-id="{{ attendee.id }}">Sign Up</button>
+        <button class="btn btn-primary open_modal" data-attendee-id="{{ attendee.id }}">Sign Up</button>
       </td>
       {% endif %}
       {% endblock tablerows %}
@@ -115,6 +114,67 @@
   {% endfor %}
 </ul>
 {% endif %}
-
 {% endblock table %}
+<iframe id="upload_frame" name="upload_frame" style="display:none"></iframe>
+<div id="bidder_modals">
+  {% for attendee in attendees -%}
+  {{ bidder_signup_macros.bidder_signup_modal(attendee) }}
+  {%- endfor %}
+</div>
+<form role="form" method="post" id="print_form" action="print_bidder_form">
+  <input type="hidden" name="id" id="print_id" />
+  {{ csrf_token() }}
+</form>
+<script type="text/javascript">
+    var openModal = function(e) {
+        e.preventDefault();
+        var id = $(this).closest('.attendee-row').data('attendee_id');
+        $('#bidder_modals').find('.modal').removeClass('print_form');
+        $('#attendee_'+id).addClass('print_form').modal();
+    };
+
+    $(document).ready(function() {
+        var print = false;
+        $('.open_modal').on('click', openModal);
+        $('.save_bidder').on('click', function() {
+            print = $(this).hasClass('print');
+        });
+
+        $('#bidder_modals').find('form').submit(function(e) {
+            $(this).find('.save_bidder').prop('disabled', true);
+            return true;
+        });
+
+        $('#upload_frame').load(function() {
+            try {
+                var responseText = $(this.contentDocument.body).text().trim();
+                this.contentDocument.body.innerHTML = '';
+                if (responseText) {
+                    try {
+                        var response = $.parseJSON(responseText);
+                        if (!response['error']) {
+                            var $modals = $('#bidder_modals').find('.modal');
+
+                            if (print) {
+                                window.open('', 'print_form_target', 'width=400,height=400,resizeable,scrollbars');
+                                $('#print_id').val(response['id']);
+                                $('#print_form').attr('target', 'print_form_target').submit()
+                            } else {
+                                $modals.modal('hide');
+                                location.href = '?search_text={{ search_text|urlencode }}&message='+response['success'];
+                            }
+                        } else {
+                            toastr.error('', response['error'], {timeOut: 5000});
+                        }
+                    } catch(ex) {
+                        toastr.error('', 'There was an error saving the bidder: ' + responseText.substring(0, 1024), {timeOut: 5000});
+                    }
+                }
+            } finally {
+                $('#bidder_modals').find('.save_bidder').prop('disabled', false);
+            }
+        });
+
+    });
+</script>
 {% endblock content %}

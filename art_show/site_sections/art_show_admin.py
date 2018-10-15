@@ -14,7 +14,7 @@ from uber.models import Attendee, Tracking, ArbitraryCharge
 from uber.utils import Charge, check, localized_now, Order
 
 from art_show.config import config
-from art_show.models import ArtShowPiece
+from art_show.models import ArtShowBidder, ArtShowPiece
 
 @all_renderable(c.ART_SHOW)
 class Root:
@@ -290,6 +290,35 @@ class Root:
             'order': Order(order),
             'attendee': session.attendee(uploaded_id, allow_invalid=True) if uploaded_id else None,
         }
+
+    @ajax
+    def sign_up_bidder(self, session, **params):
+        attendee = session.attendee(params['attendee_id'])
+        if params['id']:
+            bidder = session.art_show_bidder(params)
+        else:
+            params.pop('id')
+            bidder = ArtShowBidder()
+            bidder.apply(params, restricted=False)
+            attendee.art_show_bidder = bidder
+
+        message = check(bidder)
+        if message:
+            session.rollback()
+            return {'error': message}
+        else:
+            session.commit()
+
+        return {'id': bidder.id,
+                'error': message,
+                'success': 'Bidder signup complete'}
+
+    def print_bidder_form(self, session, id, **params):
+        bidder = session.art_show_bidder(id)
+        attendee = bidder.attendee
+
+        return {'model': attendee,
+                'type': 'bidder'}
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',

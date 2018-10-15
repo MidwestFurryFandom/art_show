@@ -252,6 +252,7 @@ class ArtShowPiece(MagModel):
 
 @Session.model_mixin
 class Attendee:
+    art_show_bidder = relationship('ArtShowBidder', backref=backref('attendee', load_on_pending=True), uselist=False)
 
     @presave_adjustment
     def not_attending_need_not_pay(self):
@@ -286,10 +287,8 @@ class Attendee:
 
     @property
     def full_address(self):
-        if self.country and self.city \
-                and (self.region
-                     or self.country not in ['United States', 'Canada']) \
-                and self.address1:
+        if self.country and self.city and (
+                    self.region or self.country not in ['United States', 'Canada']) and self.address1:
             return True
 
     @property
@@ -300,11 +299,9 @@ class Attendee:
                     return '../art_show_applications/edit?id={}'.format(app.id)
         return 'attendee_donation_form?id={}'.format(self.id)
 
+
 class ArtShowBidder(MagModel):
-    attendee_id = Column(UUID, ForeignKey('attendee.id', ondelete='SET NULL'),
-                         nullable=True)
-    attendee = relationship('Attendee', foreign_keys=attendee_id, cascade='save-update, merge',
-                                  backref=backref('art_show_bidder', cascade='save-update, merge'))
+    attendee_id = Column(UUID, ForeignKey('attendee.id', ondelete='SET NULL'), nullable=True)
     bidder_num = Column(UnicodeText)
     hotel_name = Column(UnicodeText)
     hotel_room_num = Column(UnicodeText)
