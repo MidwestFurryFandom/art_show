@@ -248,52 +248,57 @@ class Root:
         cherrypy.response.headers['Content-Disposition'] = 'attachment; filename=bidsheets.pdf'
         return pdf.output(dest='S').encode('latin-1')
 
-    def bidder_signup(self, session, message='', page='0', search_text='', uploaded_id='', order='badge_printed_name'):
+    def bidder_signup(self, session, message='', page=1, search_text='', order=''):
         filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
         search_text = search_text.strip()
         if search_text:
-            try:
-                badge_num = int(search_text)
-            except:
-                filters.append(Attendee.badge_printed_name.ilike('%{}%'.format(search_text)))
+            order = order or 'badge_printed_name'
+            if not re.match('\w-[0-9]{4}', search_text):
+                try:
+                    badge_num = int(search_text)
+                except:
+                    filters.append(Attendee.badge_printed_name.ilike('%{}%'.format(search_text)))
+                else:
+                    filters.append(or_(Attendee.badge_num == badge_num,
+                                       Attendee.badge_printed_name.ilike('%{}%'.format(search_text))))
+                    attendees = session.search('', *filters).join(Attendee.art_show_bidder)
             else:
-                filters.append(or_(Attendee.badge_num == badge_num,
-                                   Attendee.badge_printed_name.ilike('%{}%'.format(search_text))))
+                attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
+                    ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
 
-            attendees = session.search('', *filters)
-            count = attendees.count()
+        else:
+            attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(Attendee.art_show_bidder.has())
 
-            attendees = attendees.order(order)
+        count = attendees.count()
 
-            page = int(page) or 1
+        if 'bidder_num' in str(order) or not order:
+            attendees = attendees.order_by(
+                ArtShowBidder.bidder_num.desc() if '-' in str(order) else ArtShowBidder.bidder_num)
+        else:
+            attendees = attendees.join(Attendee.art_show_bidder).order(order)
 
-            if not count:
-                message = 'No matches found'
+        page = int(page) or 1
 
-            pages = range(1, int(math.ceil(count / 100)) + 1)
-            attendees = attendees[-100 + 100*page: 100*page]
+        if not count:
+            message = 'No matches found'
 
-            return {
-                'message':        message,
-                'page':           page,
-                'pages':          pages,
-                'search_text':    search_text,
-                'search_results': bool(search_text),
-                'attendees':      attendees,
-                'order':          Order(order),
-            }
+        pages = range(1, int(math.ceil(count / 100)) + 1)
+        attendees = attendees[-100 + 100*page: 100*page]
 
         return {
-            'message': message,
-            'page': 0,
-            'pages': [],
-            'order': Order(order),
-            'attendee': session.attendee(uploaded_id, allow_invalid=True) if uploaded_id else None,
+            'message':        message,
+            'page':           page,
+            'pages':          pages,
+            'search_text':    search_text,
+            'search_results': bool(search_text),
+            'attendees':      attendees,
+            'order':          Order(order),
         }
 
     @ajax
     def sign_up_bidder(self, session, **params):
         attendee = session.attendee(params['attendee_id'])
+        success = 'Bidder saved'
         if params['id']:
             bidder = session.art_show_bidder(params)
         else:
@@ -304,6 +309,7 @@ class Root:
 
         if params['complete']:
             bidder.signed_up = localized_now()
+            success = 'Bidder signup complete'
 
         message = check(bidder)
         if message:
@@ -316,7 +322,7 @@ class Root:
                 'attendee_id': attendee.id,
                 'bidder_num': bidder.bidder_num,
                 'error': message,
-                'success': 'Bidder signup complete'}
+                'success': success}
 
     def print_bidder_form(self, session, id, **params):
         bidder = session.art_show_bidder(id)

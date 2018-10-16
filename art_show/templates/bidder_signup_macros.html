@@ -17,7 +17,11 @@
         <div class="modal-footer">
           <input type="hidden" name="complete" class="complete" />
           <button type="submit" class="btn btn-primary save_bidder print">Save & Print Form</button>
-          <button type="submit" class="btn btn-success save_bidder">Complete Signup</button>
+          {% if attendee.art_show_bidder.signed_up %}
+          <button type="submit" class="btn btn-success save_bidder">Save</button>
+          {% else %}
+          <button type="submit" class="btn btn-success save_bidder complete">Complete Signup</button>
+          {% endif %}
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
         </div>
       </form>
