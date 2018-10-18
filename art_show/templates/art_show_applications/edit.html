@@ -6,31 +6,40 @@
 <div class="panel panel-default">
   <div class="panel-body">
     <h2>{{ c.EVENT_NAME }} Art Show Application</h2>
-      {% if app.status == c.APPROVED %}
-      Congratulations, your application has been approved!
+      {% if app.status in [c.APPROVED, c.PAID] %}
+      {% if app.status == c.APPROVED %}Congratulations, your application has been approved!{% endif %}
         {% if not app.incomplete_reason and app.is_unpaid %}
           In order to complete your application, please pay ${{ app.attendee.amount_unpaid }} using the button below.
           {% if app.attendee.badge_cost %}This total includes the cost of your badge, if you have not paid for it
-          already.{% endif %}<br/>
+          already.{% endif %}<br/><br/>
           <div style="text-align:center">
               {{ stripe_form('process_art_show_payment', charge) }}
           </div><br/><br/>
-        {% elif app.attendee.badge_status == c.NEW_STATUS %}
+        {% elif app.attendee.placeholder and app.attendee.badge_status != c.NOT_ATTENDING %}
           Before completing your application, please finish filling out your information
           <a href="../preregistration/confirm?id={{ app.attendee_id }}" target="_blank">here</a>. Afterwards, you will
           be able to pay for your application on this page.
-        {% elif app.delivery_method == c.BY_MAIL and not app.attendee.full_address %}
+        {% elif app.delivery_method == c.BY_MAIL and not app.address1 %}
           Please fill in your mailing address below. Afterwards, you will be able to pay for your application on this page.
         {% else %}
         <br/><br/>{% include 'art_pieces_form.html' %}
         {% endif %}
-        {% if app.delivery_method == c.BY_MAIL and app.attendee.badge_status == c.NOT_ATTENDING %}
+        {% if app.delivery_method == c.BY_MAIL and not app.address1 %}
           <br/><br/>
           <form method="post" action="mailing_address" class="form-horizontal" role="form">
             <input type="hidden" name="id" value="{{ app.id }}" />
-            {{ macros.address_form(app.attendee) }}
+            {{ csrf_token() }}
+            {{ macros.form_group(app, 'business_name', label="Mailing Business Name", placeholder=app.attendee.full_name) }}
             <div class="form-group">
-              <div class="col-sm-6 col-sm-offset-3"><button type="submit" class="btn btn-primary" value="Update Address">Update Address</button></div>
+              <div class="col-sm-6 col-sm-offset-3">
+                <button type="submit" class="btn btn-success" name="copy_address" value="1"{% if not app.attendee.address1 %} disabled{% endif %}>Use My Personal Address</button>
+              </div>
+            </div>
+            {{ macros.address_form(app, label_prefix="Mailing") }}
+            <div class="form-group">
+              <div class="col-sm-6 col-sm-offset-3">
+                <button type="submit" class="btn btn-primary">Add Mailing Address</button>
+              </div>
             </div>
           </form>
         {% endif %}

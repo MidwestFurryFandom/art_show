@@ -142,29 +142,35 @@ class Root:
     def confirmation(self, session, id):
         return {'app': session.art_show_application(id)}
 
-    def mailing_address(self, session, id, message='', **params):
-        app = session.art_show_application(id)
+    def mailing_address(self, session, message='', **params):
+        app = session.art_show_application(params)
 
-        attendee = app.attendee
-        attendee.apply(params, restricted=True)
+        if 'copy_address' in params:
+            app.address1 = app.attendee.address1
+            app.address2 = app.attendee.address2
+            app.city = app.attendee.city
+            app.region = app.attendee.region
+            app.zip_code = app.attendee.zip_code
+            app.country = app.attendee.country
+
         from uber.model_checks import _invalid_zip_code
 
-        if not attendee.address1:
+        if not app.address1:
             message = 'Please enter a street address.'
-        if not attendee.city:
+        if not app.city:
             message = 'Please enter a city.'
-        if not attendee.region and attendee.country in ['United States', 'Canada']:
+        if not app.region and app.country in ['United States', 'Canada']:
             message = 'Please enter a state, province, or region.'
-        if not attendee.country:
+        if not app.country:
             message = 'Please enter a country.'
-        if not attendee.international and not c.AT_OR_POST_CON:
-            if _invalid_zip_code(attendee.zip_code):
+        if app.country == 'United States':
+            if _invalid_zip_code(app.zip_code):
                 message = 'Enter a valid zip code'
 
         if message:
             session.rollback()
         else:
-            message = 'Mailing address updated.'
+            message = 'Mailing address added.'
 
         raise HTTPRedirect('edit?id={}&message={}', app.id, message)
 
@@ -233,6 +239,9 @@ class Root:
                                    app.id, message)
             else:
                 attendee.amount_paid += charge.dollar_amount
+                app.status = c.PAID
+                if attendee.paid == c.NOT_PAID:
+                    attendee.paid = c.HAS_PAID
             session.add(attendee)
             send_email.delay(
                 c.ADMIN_EMAIL,

@@ -8,7 +8,7 @@ from uber.decorators import cost_property, presave_adjustment, render
 from uber.models.types import Choice, DefaultColumn as Column,\
     default_relationship as relationship
 
-from residue import CoerceUTF8 as UnicodeText, UUID
+from residue import CoerceUTF8 as UnicodeText, UTCDateTime, UUID
 from sqlalchemy.orm import backref
 from sqlalchemy.types import Integer, Boolean
 from sqlalchemy.orm import joinedload
@@ -69,6 +69,9 @@ class ArtShowApplication(MagModel):
     agent = relationship('Attendee', foreign_keys=agent_id, cascade='save-update, merge',
                             backref=backref('art_agent_applications', cascade='save-update, merge'))
     agent_code = Column(UnicodeText)
+    checked_in = Column(UTCDateTime, nullable=True)
+    checked_out = Column(UTCDateTime, nullable=True)
+    locations = Column(UnicodeText)
     artist_name = Column(UnicodeText)
     artist_id = Column(UnicodeText, admin_only=True)
     banner_name = Column(UnicodeText)
@@ -80,6 +83,13 @@ class ArtShowApplication(MagModel):
     tables = Column(Integer, default=0)
     tables_ad = Column(Integer, default=0)
     description = Column(UnicodeText)
+    business_name = Column(UnicodeText)
+    zip_code = Column(UnicodeText)
+    address1 = Column(UnicodeText)
+    address2 = Column(UnicodeText)
+    city = Column(UnicodeText)
+    region = Column(UnicodeText)
+    country = Column(UnicodeText)
     website = Column(UnicodeText)
     special_needs = Column(UnicodeText)
     status = Column(Choice(c.ART_SHOW_STATUS_OPTS), default=c.UNAPPROVED)
@@ -99,7 +109,7 @@ class ArtShowApplication(MagModel):
 
     @presave_adjustment
     def add_artist_id(self):
-        if self.status == c.APPROVED and not self.artist_id:
+        if self.status in [c.APPROVED, c.PAID] and not self.artist_id:
             from uber.models import Session
             with Session() as session:
                 # Kind of inefficient, but doing one big query for all the existing
@@ -143,17 +153,17 @@ class ArtShowApplication(MagModel):
 
     @property
     def incomplete_reason(self):
-        if self.status != c.APPROVED:
+        if self.status not in [c.APPROVED, c.PAID]:
             return self.status_label
         if self.delivery_method == c.BY_MAIL \
-                and not self.attendee.full_address:
+                and not self.address1:
             return "Mailing address required"
-        if self.attendee.badge_status == c.NEW_STATUS:
+        if self.attendee.placeholder and self.attendee.badge_status != c.NOT_ATTENDING:
             return "Missing registration info"
 
     @property
     def total_cost(self):
-        if self.status != c.APPROVED:
+        if self.status not in [c.APPROVED, c.PAID]:
             return 0
         else:
             return self.potential_cost
@@ -191,7 +201,7 @@ class ArtShowApplication(MagModel):
 
     @property
     def is_unpaid(self):
-        return self.attendee.amount_unpaid > 0
+        return self.status == c.APPROVED
 
     @property
     def highest_piece_id(self):
@@ -228,6 +238,17 @@ class ArtShowPiece(MagModel):
         if not self.piece_id:
             self.piece_id = int(self.app.highest_piece_id) + 1
 
+    @property
+    def barcode_data(self):
+        return str(self.app.artist_id) + "-" + str(self.piece_id)
+
+    @property
+    def valid_quick_sale(self):
+        return self.for_sale and not self.no_quick_sale and self.quick_sale_price
+
+    @property
+    def valid_for_sale(self):
+        return self.for_sale and self.opening_bid
 
 @Session.model_mixin
 class Attendee:
@@ -244,6 +265,17 @@ class Attendee:
             for app in art_apps:
                 app.agent_id = self.id
 
+    @presave_adjustment
+    def mark_paid_if_paid(self):
+        # Allows us to fix some data errors -- we won't need this after 2018
+        if not self.amount_unpaid:
+            if self.paid == c.NOT_PAID:
+                self.paid = c.HAS_PAID
+
+            for app in self.art_show_applications:
+                if app.status == c.APPROVED:
+                    app.status = c.PAID
+
     @cost_property
     def art_show_app_cost(self):
         cost = 0
@@ -259,3 +291,11 @@ class Attendee:
                      or self.country not in ['United States', 'Canada']) \
                 and self.address1:
             return True
+
+    @property
+    def payment_page(self):
+        if self.art_show_applications:
+            for app in self.art_show_applications:
+                if app.total_cost and app.status != c.PAID:
+                    return '../art_show_applications/edit?id={}'.format(app.id)
+        return 'attendee_donation_form?id={}'.format(self.id)
