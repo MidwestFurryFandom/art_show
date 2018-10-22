@@ -50,25 +50,43 @@ app, c.PAGE_PATH,
       {% endif %}
 
       <div class="form-group">
-        <label for="status" class="col-sm-3 control-label">Status</label>
+        <label for="status" class="col-sm-3 control-label">Application Status</label>
         <div class="col-sm-6">
           <select class="form-control" name="status">
             {{ options(c.ART_SHOW_STATUS_OPTS, app.status) }}
           </select>
         </div>
         <div class="clearfix"></div>
-        <p class="help-block col-sm-6 col-sm-offset-3">Changing this will trigger an email to the attendee.</p>
+        <p class="help-block col-sm-6 col-sm-offset-3">Changing this may trigger an email to the attendee.</p>
       </div>
 
       <div class="form-group">
         <label class="col-sm-3 control-label">Paid?</label>
         <div class="col-sm-6">
+          {% if app.status in [c.APPROVED, c.PAID] %}
+          <div class="form-inline">
+          <select class="form-control" name="mark_paid">
+            <option value="0"{% if app.status == c.APPROVED %}selected="selected"{% endif %}>No</option>
+            <option value="1"{% if app.status == c.PAID %}selected="selected"{% endif %}>Yes</option>
+          </select>
+          <span id="amount_paid">
+            <div class="input-group">
+              <span class="input-group-addon">$</span><input type="text" class="form-control" name="app_paid" value="{{ app_paid }}" />
+            </div> (${{ app.attendee.amount_paid }} of ${{ app.attendee.total_cost }} total)
+          </span>
+          </div>
+          {% else %}
           <p class="form-control-static">
-            {% if app.status == c.APPROVED %}No{% elif app.status == c.PAID %}Yes{% else %}N/A{% endif %}
-            <a href="../art_show_applications/edit?id={{ app.id }}">(payment link)</a>
+            N/A
           </p>
+          {% endif %}
         </div>
+        <div class="clearfix"></div>
+          <p class="help-block col-sm-6 col-sm-offset-3">
+            <a href="../art_show_applications/edit?id={{ app.id }}">View this application</a> for the payment button.
+          </p>
       </div>
+
 
       {% include 'art_show_applications/art_show_form.html' %}
 

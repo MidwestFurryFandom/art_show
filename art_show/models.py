@@ -265,17 +265,6 @@ class Attendee:
             for app in art_apps:
                 app.agent_id = self.id
 
-    @presave_adjustment
-    def mark_paid_if_paid(self):
-        # Allows us to fix some data errors -- we won't need this after 2018
-        if not self.amount_unpaid:
-            if self.paid == c.NOT_PAID:
-                self.paid = c.HAS_PAID
-
-            for app in self.art_show_applications:
-                if app.status == c.APPROVED:
-                    app.status = c.PAID
-
     @cost_property
     def art_show_app_cost(self):
         cost = 0
