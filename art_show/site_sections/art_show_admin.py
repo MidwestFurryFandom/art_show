@@ -14,7 +14,7 @@ from uber.models import Attendee, Tracking, ArbitraryCharge
 from uber.utils import Charge, check, localized_now, Order
 
 from art_show.config import config
-from art_show.models import ArtShowBidder, ArtShowPiece
+from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPiece
 
 @all_renderable(c.ART_SHOW)
 class Root:
@@ -79,22 +79,24 @@ class Root:
         }
 
     def ops(self, session, message=''):
-        attendee_attrs = session.query(Attendee.id, Attendee.full_name,
-                                       Attendee.badge_type, Attendee.badge_num) \
-            .filter(Attendee.first_name != '',
-                    Attendee.badge_status not in [c.INVALID_STATUS,
-                                                  c.WATCHED_STATUS])
+        return {
+            'message': message,
+        }
 
-        attendees = [
-            (id, '{} - {}{}'.format(name.title(), c.BADGES[badge_type],
-                                    ' #{}'.format(
-                                        badge_num) if badge_num else ''))
-            for id, name, badge_type, badge_num in attendee_attrs]
+    def artist_check_in_out(self, session, checkout=False, message=''):
+        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        if checkout:
+            filters.append(ArtShowApplication.checked_in != None)
+        else:
+            filters.append(ArtShowApplication.checked_out == None)
+
+        applications = session.query(ArtShowApplication).join(ArtShowApplication.attendee).filter(
+            ArtShowApplication.status == c.PAID).filter(*filters).all()
 
         return {
             'message': message,
-            'applications': session.art_show_apps(),
-            'all_attendees': sorted(attendees, key=lambda tup: tup[1]),
+            'applications': applications,
+            'checkout': checkout,
         }
 
     @ajax
