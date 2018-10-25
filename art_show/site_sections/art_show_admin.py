@@ -255,7 +255,12 @@ class Root:
         search_text = search_text.strip()
         if search_text:
             order = order or 'badge_printed_name'
-            if not re.match('\w-[0-9]{4}', search_text):
+            if re.match('\w-[0-9]{4}', search_text):
+                attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
+                    ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
+            else:
+                # Sorting by bidder number requires a join, which would filter out anyone without a bidder num
+                order = 'badge_printed_name' if order == 'bidder_num' else order
                 try:
                     badge_num = int(search_text)
                 except:
@@ -263,22 +268,17 @@ class Root:
                 else:
                     filters.append(or_(Attendee.badge_num == badge_num,
                                        Attendee.badge_printed_name.ilike('%{}%'.format(search_text))))
-                finally:
-                    attendees = session.search('', *filters).join(Attendee.art_show_bidder)
-            else:
-                attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
-                    ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
-
+                attendees = session.query(Attendee).filter(*filters)
         else:
-            attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(Attendee.art_show_bidder.has())
+            attendees = session.query(Attendee).join(Attendee.art_show_bidder)
 
         count = attendees.count()
 
         if 'bidder_num' in str(order) or not order:
-            attendees = attendees.order_by(
+            attendees = attendees.join(Attendee.art_show_bidder).order_by(
                 ArtShowBidder.bidder_num.desc() if '-' in str(order) else ArtShowBidder.bidder_num)
         else:
-            attendees = attendees.join(Attendee.art_show_bidder).order(order)
+            attendees = attendees.order(order)
 
         page = int(page) or 1
 
