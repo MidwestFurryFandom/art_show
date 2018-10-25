@@ -2,6 +2,7 @@ import cherrypy
 import treepoem
 import os
 import re
+import math
 
 from sqlalchemy import or_, and_
 from io import BytesIO
@@ -10,10 +11,10 @@ from uber.config import c
 from uber.decorators import ajax, all_renderable, credit_card, unrestricted
 from uber.errors import HTTPRedirect
 from uber.models import Attendee, Tracking, ArbitraryCharge
-from uber.utils import Charge, check, localized_now
+from uber.utils import Charge, check, localized_now, Order
 
 from art_show.config import config
-from art_show.models import ArtShowPiece
+from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPiece
 
 @all_renderable(c.ART_SHOW)
 class Root:
@@ -78,22 +79,24 @@ class Root:
         }
 
     def ops(self, session, message=''):
-        attendee_attrs = session.query(Attendee.id, Attendee.full_name,
-                                       Attendee.badge_type, Attendee.badge_num) \
-            .filter(Attendee.first_name != '',
-                    Attendee.badge_status not in [c.INVALID_STATUS,
-                                                  c.WATCHED_STATUS])
+        return {
+            'message': message,
+        }
 
-        attendees = [
-            (id, '{} - {}{}'.format(name.title(), c.BADGES[badge_type],
-                                    ' #{}'.format(
-                                        badge_num) if badge_num else ''))
-            for id, name, badge_type, badge_num in attendee_attrs]
+    def artist_check_in_out(self, session, checkout=False, message=''):
+        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        if checkout:
+            filters.append(ArtShowApplication.checked_in != None)
+        else:
+            filters.append(ArtShowApplication.checked_out == None)
+
+        applications = session.query(ArtShowApplication).join(ArtShowApplication.attendee).filter(
+            ArtShowApplication.status == c.PAID).filter(*filters).all()
 
         return {
             'message': message,
-            'applications': session.art_show_apps(),
-            'all_attendees': sorted(attendees, key=lambda tup: tup[1]),
+            'applications': applications,
+            'checkout': checkout,
         }
 
     @ajax
@@ -256,6 +259,90 @@ class Root:
 
         cherrypy.response.headers['Content-Disposition'] = 'attachment; filename=bidsheets.pdf'
         return pdf.output(dest='S').encode('latin-1')
+
+    def bidder_signup(self, session, message='', page=1, search_text='', order=''):
+        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        search_text = search_text.strip()
+        if search_text:
+            order = order or 'badge_printed_name'
+            if re.match('\w-[0-9]{4}', search_text):
+                attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
+                    ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
+            else:
+                # Sorting by bidder number requires a join, which would filter out anyone without a bidder num
+                order = 'badge_printed_name' if order == 'bidder_num' else order
+                try:
+                    badge_num = int(search_text)
+                except:
+                    filters.append(Attendee.badge_printed_name.ilike('%{}%'.format(search_text)))
+                else:
+                    filters.append(or_(Attendee.badge_num == badge_num,
+                                       Attendee.badge_printed_name.ilike('%{}%'.format(search_text))))
+                attendees = session.query(Attendee).filter(*filters)
+        else:
+            attendees = session.query(Attendee).join(Attendee.art_show_bidder)
+
+        count = attendees.count()
+
+        if 'bidder_num' in str(order) or not order:
+            attendees = attendees.join(Attendee.art_show_bidder).order_by(
+                ArtShowBidder.bidder_num.desc() if '-' in str(order) else ArtShowBidder.bidder_num)
+        else:
+            attendees = attendees.order(order)
+
+        page = int(page) or 1
+
+        if not count:
+            message = 'No matches found'
+
+        pages = range(1, int(math.ceil(count / 100)) + 1)
+        attendees = attendees[-100 + 100*page: 100*page]
+
+        return {
+            'message':        message,
+            'page':           page,
+            'pages':          pages,
+            'search_text':    search_text,
+            'search_results': bool(search_text),
+            'attendees':      attendees,
+            'order':          Order(order),
+        }
+
+    @ajax
+    def sign_up_bidder(self, session, **params):
+        attendee = session.attendee(params['attendee_id'])
+        success = 'Bidder saved'
+        if params['id']:
+            bidder = session.art_show_bidder(params)
+        else:
+            params.pop('id')
+            bidder = ArtShowBidder()
+            bidder.apply(params, restricted=False)
+            attendee.art_show_bidder = bidder
+
+        if params['complete']:
+            bidder.signed_up = localized_now()
+            success = 'Bidder signup complete'
+
+        message = check(bidder)
+        if message:
+            session.rollback()
+            return {'error': message}
+        else:
+            session.commit()
+
+        return {'id': bidder.id,
+                'attendee_id': attendee.id,
+                'bidder_num': bidder.bidder_num,
+                'error': message,
+                'success': success}
+
+    def print_bidder_form(self, session, id, **params):
+        bidder = session.art_show_bidder(id)
+        attendee = bidder.attendee
+
+        return {'model': attendee,
+                'type': 'bidder'}
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',
