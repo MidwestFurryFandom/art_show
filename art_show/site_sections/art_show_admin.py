@@ -263,6 +263,7 @@ class Root:
                 else:
                     filters.append(or_(Attendee.badge_num == badge_num,
                                        Attendee.badge_printed_name.ilike('%{}%'.format(search_text))))
+                finally:
                     attendees = session.search('', *filters).join(Attendee.art_show_bidder)
             else:
                 attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
