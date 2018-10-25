@@ -1,5 +1,6 @@
 import random
 import string
+import re
 
 from sqlalchemy import func
 
@@ -154,6 +155,10 @@ class ArtShowApplication(MagModel):
         return new_agent_code
 
     @property
+    def display_name(self):
+        return self.banner_name or self.artist_name or self.attendee.full_name
+
+    @property
     def incomplete_reason(self):
         if self.status not in [c.APPROVED, c.PAID]:
             return self.status_label
@@ -241,8 +246,12 @@ class ArtShowPiece(MagModel):
             self.piece_id = int(self.app.highest_piece_id) + 1
 
     @property
-    def barcode_data(self):
+    def artist_and_piece_id(self):
         return str(self.app.artist_id) + "-" + str(self.piece_id)
+
+    @property
+    def barcode_data(self):
+        return self.artist_and_piece_id
 
     @property
     def valid_quick_sale(self):
@@ -251,6 +260,11 @@ class ArtShowPiece(MagModel):
     @property
     def valid_for_sale(self):
         return self.for_sale and self.opening_bid
+
+    @property
+    def sale_price(self):
+        return self.winning_bid or self.quick_sale_price if self.valid_quick_sale else self.winning_bid
+
 
 @Session.model_mixin
 class Attendee:

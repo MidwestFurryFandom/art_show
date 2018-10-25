@@ -188,7 +188,7 @@
       <tbody>
       {% for piece in app.art_show_pieces %}
       <tr class="piece-row" data-piece_id="{{ piece.id }}">
-        <td> {{ app.artist_id }}-{{ piece.piece_id }} </td>
+        <td> {{ piece.artist_and_piece_id }} </td>
         <td>
           {% if admin_area %}
           <form method="post" action="../art_show_applications/save_art_show_piece" target="upload_frame" role="form" class="form-horizontal">

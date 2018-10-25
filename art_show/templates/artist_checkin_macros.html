@@ -159,7 +159,7 @@
     <tbody>
     {% for piece in app.art_show_pieces|sort(attribute='piece_id')|sort(attribute='gallery_label') %}
     <tr class="piece-row" data-piece_id="{{ piece.piece_id }}">
-      <td> {{ app.artist_id }}-{{ piece.piece_id }} <input type="hidden" name="piece_ids" value="{{ piece.id }}" /> </td>
+      <td> {{ piece.artist_and_piece_id }} <input type="hidden" name="piece_ids" value="{{ piece.id }}" /> </td>
       {% if not printable %} <td>
         <select name="status{{ piece.id }}" class="form-control">
           {{ options(c.ART_PIECE_STATUS_OPTS, piece.status) }}

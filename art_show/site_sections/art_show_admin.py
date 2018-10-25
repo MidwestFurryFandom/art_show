@@ -233,7 +233,7 @@ class Root:
             pdf.set_font("Arial", size=12)
             pdf.set_xy(81 + xplus, 54 + yplus)
             pdf.cell(160, 24,
-                     txt=(piece.app.banner_name or piece.app.artist_name or piece.app.attendee.full_name),
+                     txt=(piece.app.display_name),
                      ln=1, align="C")
             pdf.set_xy(81 + xplus, 80 + yplus)
             pdf.cell(160, 24, txt=piece.name, ln=1, align="C")
@@ -269,7 +269,7 @@ class Root:
                 attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
                     ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
             else:
-                # Sorting by bidder number requires a join, which would filter out anyone without a bidder num
+                # Sorting by bidder number requires a join, which would filter out anyone without a bidder number
                 order = 'badge_printed_name' if order == 'bidder_num' else order
                 try:
                     badge_num = int(search_text)
@@ -282,14 +282,13 @@ class Root:
         else:
             attendees = session.query(Attendee).join(Attendee.art_show_bidder)
 
-        count = attendees.count()
-
         if 'bidder_num' in str(order) or not order:
             attendees = attendees.join(Attendee.art_show_bidder).order_by(
                 ArtShowBidder.bidder_num.desc() if '-' in str(order) else ArtShowBidder.bidder_num)
         else:
             attendees = attendees.order(order)
 
+        count = attendees.count()
         page = int(page) or 1
 
         if not count:
@@ -331,18 +330,22 @@ class Root:
         else:
             session.commit()
 
-        return {'id': bidder.id,
-                'attendee_id': attendee.id,
-                'bidder_num': bidder.bidder_num,
-                'error': message,
-                'success': success}
+        return {
+            'id': bidder.id,
+            'attendee_id': attendee.id,
+            'bidder_num': bidder.bidder_num,
+            'error': message,
+            'success': success
+        }
 
     def print_bidder_form(self, session, id, **params):
         bidder = session.art_show_bidder(id)
         attendee = bidder.attendee
 
-        return {'model': attendee,
-                'type': 'bidder'}
+        return {
+            'model': attendee,
+            'type': 'bidder'
+        }
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',

@@ -77,7 +77,7 @@
       {% if c.NUMBERED_BADGES %}<td>{{ attendee.badge_num }}</td>{% endif %}
       <td>
         {% for app in attendee.art_show_applications %}
-        <a href="form?id={{ app.id }}">{{ app.banner_name or app.artist_name or attendee.full_name }}</a>
+        <a href="form?id={{ app.id }}">{{ app.display_name }}</a>
         {% else %}
         N/A
         {% endfor %}
