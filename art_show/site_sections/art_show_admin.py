@@ -30,6 +30,7 @@ class Root:
         else:
             app = session.art_show_application(params)
         attendee = None
+        app_paid = max(0, app.attendee.amount_paid - (app.attendee.total_cost - app.total_cost))
         if cherrypy.request.method == 'POST':
             if new_app:
                 attendee, message = \
@@ -41,8 +42,16 @@ class Root:
                 if attendee:
                     if params.get('badge_status', ''):
                         attendee.badge_status = params['badge_status']
+                    if 'app_paid' in params \
+                            and int(params['app_paid']) != app_paid \
+                            and int(params['app_paid']) > 0:
+                        attendee.amount_paid -= app_paid
+                        attendee.amount_paid += int(params['app_paid'])
                     session.add(attendee)
                     app.attendee = attendee
+
+                if 'mark_paid' in params:
+                    app.status = c.APPROVED if int(params['mark_paid']) == 0 else c.PAID
                 session.add(app)
                 if params.get('save') == 'save_return_to_search':
                     return_to = 'index?'
@@ -54,6 +63,7 @@ class Root:
             'message': message,
             'app': app,
             'attendee': attendee,
+            'app_paid': app_paid,
             'attendee_id': app.attendee_id or params.get('attendee_id', ''),
             'all_attendees': session.all_attendees(),
             'new_app': new_app
