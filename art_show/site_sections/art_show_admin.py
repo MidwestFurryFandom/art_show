@@ -84,7 +84,7 @@ class Root:
         }
 
     def artist_check_in_out(self, session, checkout=False, message=''):
-        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        filters = []
         if checkout:
             filters.append(ArtShowApplication.checked_in != None)
         else:
@@ -261,7 +261,7 @@ class Root:
         return pdf.output(dest='S').encode('latin-1')
 
     def bidder_signup(self, session, message='', page=1, search_text='', order=''):
-        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        filters = []
         search_text = search_text.strip()
         if search_text:
             order = order or 'badge_printed_name'
