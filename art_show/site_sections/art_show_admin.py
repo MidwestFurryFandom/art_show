@@ -347,6 +347,55 @@ class Root:
             'type': 'bidder'
         }
 
+    def sales_search(self, session, message='', page=1, search_text='', order=''):
+        filters = []
+        search_text = search_text.strip()
+        if search_text:
+            order = order or 'badge_num'
+            if re.match('\w-[0-9]{4}', search_text):
+                attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
+                    ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
+            else:
+                # Sorting by bidder number requires a join, which would filter out anyone without a bidder number
+                order = 'badge_num' if order == 'bidder_num' else order
+                try:
+                    badge_num = int(search_text)
+                except:
+                    raise HTTPRedirect('sales_search?message={}', 'Please search by bidder number or badge number.')
+                else:
+                    filters.append(or_(Attendee.badge_num == badge_num))
+                attendees = session.query(Attendee).filter(*filters)
+        else:
+            attendees = session.query(Attendee).join(Attendee.art_show_purchases)
+
+        if 'bidder_num' in str(order):
+            attendees = attendees.join(Attendee.art_show_bidder).order_by(
+                ArtShowBidder.bidder_num.desc() if '-' in str(order) else ArtShowBidder.bidder_num)
+        else:
+            attendees = attendees.order(order or 'badge_num')
+
+        count = attendees.count()
+        page = int(page) or 1
+
+        if not count:
+            message = 'No matches found'
+
+        if not search_text:
+            attendees = [a for a in attendees if a.art_show_owed]
+
+        pages = range(1, int(math.ceil(count / 100)) + 1)
+        attendees = attendees[-100 + 100*page: 100*page]
+
+        return {
+            'message':        message,
+            'page':           page,
+            'pages':          pages,
+            'search_text':    search_text,
+            'search_results': bool(search_text),
+            'attendees':      attendees,
+            'order':          Order(order),
+        }
+
     def pieces_bought(self, session, id, search_text='', message='', **params):
         attendee = session.attendee(id)
         must_choose = False
