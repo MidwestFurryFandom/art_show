@@ -1,8 +1,9 @@
 import random
 import string
-import re
 
 from sqlalchemy import func
+from datetime import datetime
+from pytz import UTC
 
 from uber.config import c
 from uber.models import Session
@@ -225,6 +226,12 @@ class ArtShowPiece(MagModel):
                          cascade='save-update, merge',
                          backref=backref('art_show_pieces',
                                          cascade='save-update, merge'))
+    buyer_id = Column(UUID, ForeignKey('attendee.id',
+                                     ondelete='SET NULL'), nullable=True)
+    buyer = relationship('Attendee', foreign_keys=buyer_id,
+                       cascade='save-update, merge',
+                       backref=backref('art_show_purchases',
+                                       cascade='save-update, merge'))
     piece_id = Column(Integer)
     name = Column(UnicodeText)
     for_sale = Column(Boolean, default=False)
@@ -235,6 +242,7 @@ class ArtShowPiece(MagModel):
     print_run_total = Column(Integer, default=0, nullable=True)
     opening_bid = Column(Integer, default=0, nullable=True)
     quick_sale_price = Column(Integer, default=0, nullable=True)
+    winning_bid = Column(Integer, default=0, nullable=True)
     no_quick_sale = Column(Boolean, default=False)
 
     status = Column(Choice(c.ART_PIECE_STATUS_OPTS), default=c.EXPECTED,
@@ -264,6 +272,18 @@ class ArtShowPiece(MagModel):
     @property
     def sale_price(self):
         return self.winning_bid or self.quick_sale_price if self.valid_quick_sale else self.winning_bid
+
+
+class ArtShowPayment(MagModel):
+    attendee_id = Column(UUID, ForeignKey('attendee.id',
+                                       ondelete='SET NULL'), nullable=True)
+    attendee = relationship('Attendee', foreign_keys=attendee_id,
+                         cascade='save-update, merge',
+                         backref=backref('art_show_payments',
+                                         cascade='save-update, merge'))
+    amount = Column(Integer, default=0)
+    type = Column(Choice(c.ART_SHOW_PAYMENT_OPTS), default=c.STRIPE, admin_only=True)
+    when = Column(UTCDateTime, default=lambda: datetime.now(UTC))
 
 
 @Session.model_mixin
@@ -300,6 +320,35 @@ class Attendee:
             for app in self.art_show_applications:
                 cost += app.total_cost
         return cost
+
+    @property
+    def art_show_purchases_sum(self):
+        cost = 0
+        for piece in self.art_show_purchases:
+            cost += piece.sale_price
+        return cost
+
+    @property
+    def art_show_tax(self):
+        return self.art_show_purchases_sum * (c.SALES_TAX / 10000)
+
+    @property
+    def art_show_purchases_total(self):
+        return self.art_show_purchases_sum + self.art_show_tax
+
+    @property
+    def art_show_paid(self):
+        paid = 0
+        for payment in self.art_show_payments:
+            if payment.type == c.REFUND:
+                paid -= payment.amount
+            else:
+                paid += payment.amount
+        return paid
+
+    @property
+    def art_show_owed(self):
+        return max(0, ((self.art_show_purchases_total * 100) - self.art_show_paid) / 100)
 
     @property
     def full_address(self):

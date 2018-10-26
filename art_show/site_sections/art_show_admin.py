@@ -14,7 +14,7 @@ from uber.models import Attendee, Tracking, ArbitraryCharge
 from uber.utils import Charge, check, localized_now, Order
 
 from art_show.config import config
-from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPiece
+from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPayment, ArtShowPiece
 
 @all_renderable(c.ART_SHOW)
 class Root:
@@ -346,6 +346,114 @@ class Root:
             'model': attendee,
             'type': 'bidder'
         }
+
+    def pieces_bought(self, session, id, search_text='', message='', **params):
+        attendee = session.attendee(id)
+        must_choose = False
+        unclaimed_pieces = []
+        charge = None
+
+        if search_text:
+            if re.match('\w+-[0-9]+', search_text):
+                artist_id, piece_id = search_text.split('-')
+                pieces = session.query(ArtShowPiece).join(ArtShowPiece.app).filter(
+                    ArtShowPiece.piece_id == int(piece_id),
+                    ArtShowApplication.artist_id == artist_id.upper()
+                )
+            else:
+                pieces = session.query(ArtShowPiece).filter(ArtShowPiece.name.ilike('%{}%'.format(search_text)))
+
+            unclaimed_pieces = pieces.filter(ArtShowPiece.buyer == None, ArtShowPiece.status != c.RETURN)
+
+            if pieces.count() == 0:
+                message = "No pieces found with ID or title {}.".format(search_text)
+            elif unclaimed_pieces.count() == 0:
+                if pieces.count() == 1 and pieces.one().buyer == attendee:
+                    message = "That piece ({}) is already assigned to this buyer!".format(search_text)
+                elif pieces.count() == 1:
+                    message = "That piece ({}) is assigned to another buyer!".format(search_text)
+                else:
+                    message = "All matching pieces for '{}' are assigned to other buyers!".format(search_text)
+            elif unclaimed_pieces.count() > 1:
+                message = "There were multiple pieces found matching '{}.' Please choose one.".format(search_text)
+                must_choose = True
+
+            if not message:
+                piece = unclaimed_pieces.one()
+                piece.buyer = attendee
+                session.add(piece)
+                message = 'Piece {} successfully claimed'.format(piece.artist_and_piece_id)
+
+            if not must_choose:
+                raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
+        elif 'amount' in params:
+            amount = params['amount'] or attendee.art_show_owed
+            charge = Charge(targets=[attendee],
+                            amount=int(100 * float(amount)),
+                            description='{}ayment for {}\'s art show purchases'.format(
+                                'P' if amount == attendee.art_show_purchases_total else 'Partial p',
+                                attendee.full_name))
+
+        return {
+            'attendee': attendee,
+            'message': message,
+            'must_choose': must_choose,
+            'pieces': unclaimed_pieces,
+            'charge': charge,
+        }
+
+    def unclaim_piece(self, session, id, piece_id, **params):
+        attendee = session.attendee(id)
+        piece = session.art_show_piece(piece_id)
+
+        if piece.buyer != attendee:
+            raise HTTPRedirect('pieces_bought?id={}&message={}',
+                               attendee.id,
+                               "Can't unclaim piece: it already doesn't belong to this buyer.")
+        elif (attendee.art_show_owed - piece.sale_price < 0) and attendee.art_show_payments:
+            raise HTTPRedirect('pieces_bought?id={}&message={}',
+                               attendee.id,
+                               "Can't unclaim piece: it's already been paid for.")
+        else:
+            piece.buyer = None
+            session.add(piece)
+            raise HTTPRedirect('pieces_bought?id={}&message={}',
+                               attendee.id,
+                               'Piece {} successfully unclaimed'.format(piece.artist_and_piece_id))
+
+    def record_payment(self, session, id, amount=None, type=c.CASH):
+        attendee = session.attendee(id)
+        if type == str(c.CASH):
+            amount = amount or attendee.art_show_owed
+            message = 'Cash payment of ${} recorded'.format('%0.2f' % amount)
+        else:
+            amount = amount or attendee.art_show_paid / 100
+            message = 'Refund of ${} recorded'.format('%0.2f' % amount)
+
+        session.add(ArtShowPayment(
+            attendee=attendee,
+            amount=float(amount)*100,
+            type=type,
+        ))
+
+        raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
+
+    @unrestricted
+    @credit_card
+    def purchases_charge(self, session, payment_id, stripeToken):
+        charge = Charge.get(payment_id)
+        message = charge.charge_cc(session, stripeToken)
+        attendee_id = charge.attendees[0].id
+        attendee = session.attendee(attendee_id)
+        if message:
+            raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
+        else:
+            session.add(ArtShowPayment(
+                attendee=attendee,
+                amount=charge.amount,
+                type=c.STRIPE,
+            ))
+            raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, 'Charge successfully processed')
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',
