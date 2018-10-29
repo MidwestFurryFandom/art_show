@@ -14,7 +14,7 @@ from uber.models import Attendee, Tracking, ArbitraryCharge
 from uber.utils import Charge, check, localized_now, Order
 
 from art_show.config import config
-from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPayment, ArtShowPiece
+from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPayment, ArtShowPiece, ArtShowReceipt
 
 @all_renderable(c.ART_SHOW)
 class Root:
@@ -366,7 +366,7 @@ class Root:
                     filters.append(or_(Attendee.badge_num == badge_num))
                 attendees = session.query(Attendee).filter(*filters)
         else:
-            attendees = session.query(Attendee).join(Attendee.art_show_purchases)
+            attendees = session.query(Attendee).join(Attendee.art_show_receipts)
 
         if 'bidder_num' in str(order):
             attendees = attendees.join(Attendee.art_show_bidder).order_by(
@@ -398,6 +398,13 @@ class Root:
 
     def pieces_bought(self, session, id, search_text='', message='', **params):
         attendee = session.attendee(id)
+        if not attendee.art_show_receipt:
+            receipt = ArtShowReceipt(attendee=attendee)
+            session.add(receipt)
+            session.commit()
+        else:
+            receipt = attendee.art_show_receipt
+
         must_choose = False
         unclaimed_pieces = []
         charge = None
@@ -429,22 +436,22 @@ class Root:
 
             if not message:
                 piece = unclaimed_pieces.one()
-                piece.buyer = attendee
+                piece.receipt = receipt
                 session.add(piece)
                 message = 'Piece {} successfully claimed'.format(piece.artist_and_piece_id)
 
             if not must_choose:
                 raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
         elif 'amount' in params:
-            amount = params['amount'] or attendee.art_show_owed
+            amount = params['amount'] or receipt.owed
             charge = Charge(targets=[attendee],
                             amount=int(100 * float(amount)),
                             description='{}ayment for {}\'s art show purchases'.format(
-                                'P' if amount == attendee.art_show_purchases_total else 'Partial p',
+                                'P' if amount == receipt.total else 'Partial p',
                                 attendee.full_name))
 
         return {
-            'attendee': attendee,
+            'receipt': receipt,
             'message': message,
             'must_choose': must_choose,
             'pieces': unclaimed_pieces,
@@ -454,17 +461,18 @@ class Root:
     def unclaim_piece(self, session, id, piece_id, **params):
         attendee = session.attendee(id)
         piece = session.art_show_piece(piece_id)
+        receipt = attendee.art_show_receipt
 
-        if piece.buyer != attendee:
+        if piece.receipt != receipt:
             raise HTTPRedirect('pieces_bought?id={}&message={}',
                                attendee.id,
                                "Can't unclaim piece: it already doesn't belong to this buyer.")
-        elif (attendee.art_show_owed - piece.sale_price < 0) and attendee.art_show_payments:
+        elif (receipt.owed - piece.sale_price < 0) and receipt.art_show_payments:
             raise HTTPRedirect('pieces_bought?id={}&message={}',
                                attendee.id,
                                "Can't unclaim piece: it's already been paid for.")
         else:
-            piece.buyer = None
+            piece.receipt = None
             session.add(piece)
             raise HTTPRedirect('pieces_bought?id={}&message={}',
                                attendee.id,
@@ -472,15 +480,17 @@ class Root:
 
     def record_payment(self, session, id, amount=None, type=c.CASH):
         attendee = session.attendee(id)
+        receipt = attendee.art_show_receipt
+
         if type == str(c.CASH):
-            amount = amount or attendee.art_show_owed
+            amount = amount or receipt.owed
             message = 'Cash payment of ${} recorded'.format('%0.2f' % amount)
         else:
-            amount = amount or attendee.art_show_paid / 100
+            amount = amount or receipt.paid / 100
             message = 'Refund of ${} recorded'.format('%0.2f' % amount)
 
         session.add(ArtShowPayment(
-            attendee=attendee,
+            receipt=receipt,
             amount=float(amount)*100,
             type=type,
         ))

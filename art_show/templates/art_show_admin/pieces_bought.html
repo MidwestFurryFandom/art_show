@@ -1,13 +1,13 @@
 {% extends "base.html" %}{% set admin_area=True %}
-{% block title %}Art Show Pieces Bought - {{ attendee.full_name }}{% endblock %}
+{% block title %}Art Show Pieces Bought - {{ receipt.attendee.full_name }}{% endblock %}
 {% block content %}
-<h3>Art Show Purchases for {{ attendee|form_link }}</h3>
+<h3>Art Show Purchases for {{ receipt.attendee|form_link }}</h3>
 <div class="panel panel-default">
   <div class="panel-body">
     <div class="row text-center">
       <div class="col-sm-4">
         <form role="form" method="post" action="pieces_bought" id="search_form">
-          <input type="hidden" name="id" value="{{ attendee.id }}" />
+          <input type="hidden" name="id" value="{{ receipt.attendee.id }}" />
           <div class="input-group">
             <input class="focus form-control" id="search_bar" type="text" name="search_text" value="{{ search_text }}" />
             <span class="input-group-btn">
@@ -29,7 +29,7 @@
 
         <form role="form" method="get" class="form" action="pieces_bought">
           <div class="modal-body">
-            <input type="hidden" name="id" value="{{ attendee.id }}" />
+            <input type="hidden" name="id" value="{{ receipt.attendee.id }}" />
             {% for piece in pieces %}
             <button class="btn btn-default" name="search_text" value="{{ piece.artist_and_piece_id }}">
               {{ piece.name }} by {{ piece.app.display_name }}
@@ -74,12 +74,12 @@
       </tr>
       </thead>
       <tbody>
-      {% for piece in attendee.art_show_purchases %}
+      {% for piece in receipt.pieces %}
       <tr class="piece-row" data-piece_id="{{ piece.id }}">
         <td>
           <form method="post" action="unclaim_piece">
             {{ csrf_token() }}
-            <input type="hidden" name="id" value="{{ attendee.id }}" />
+            <input type="hidden" name="id" value="{{ receipt.attendee.id }}" />
             <input type="hidden" name="piece_id" value="{{ piece.id }}" />
             <button type="submit" class="btn-xs btn-danger remove_piece" data-name="{{ piece.name }}">
               Remove
@@ -98,29 +98,29 @@
         </td>
       </tr>
       {% endfor %}
-      {% if attendee.art_show_purchases %}
-      <tr><td colspan="8" class="text-right">Subtotal: ${{ '%0.2f' % attendee.art_show_purchases_sum }}</td></tr>
-      <tr><td colspan="8" class="text-right">Sales Tax ({{ c.SALES_TAX / 100 }}%): ${{ '%0.2f' % attendee.art_show_tax }}</td></tr>
-      <tr><td colspan="8" class="text-right">Total Cost: ${{ '%0.2f' % attendee.art_show_purchases_total }}</td></tr>
-      <tr><td colspan="8" class="text-right">Total Paid: ${{ '%0.2f' % (attendee.art_show_paid / 100) }}</td></tr>
+      {% if receipt.pieces %}
+      <tr><td colspan="8" class="text-right">Subtotal: ${{ '%0.2f' % receipt.subtotal }}</td></tr>
+      <tr><td colspan="8" class="text-right">Sales Tax ({{ c.SALES_TAX / 100 }}%): ${{ '%0.2f' % receipt.tax }}</td></tr>
+      <tr><td colspan="8" class="text-right">Total Cost: ${{ '%0.2f' % receipt.total }}</td></tr>
+      <tr><td colspan="8" class="text-right">Total Paid: ${{ '%0.2f' % (receipt.paid / 100) }}</td></tr>
       <tr><td colspan="8"></td></tr>
-      {% if attendee.art_show_owed %}
-      <tr><td colspan="8" class="text-right">Owed: ${{ '%0.2f' % attendee.art_show_owed }}</td></tr>
+      {% if receipt.owed %}
+      <tr><td colspan="8" class="text-right">Owed: ${{ '%0.2f' % receipt.owed }}</td></tr>
       <tr><td colspan="8" class="text-right">
         <form role="form" method="post" class="form form-inline" action="record_payment">
-          <input type="hidden" name="id" value="{{ attendee.id }}" />
+          <input type="hidden" name="id" value="{{ receipt.attendee.id }}" />
           <input type="hidden" name="type" value="{{ c.CASH }}" />
           <div class="input-group">
-          <span class="input-group-addon">$</span><input type="text" class="form-control" name="amount" placeholder="{{ '%0.2f' % attendee.art_show_owed }}" />
+          <span class="input-group-addon">$</span><input type="text" class="form-control" name="amount" placeholder="{{ '%0.2f' % receipt.owed }}" />
           </div>
           <button type="submit" class="btn btn-success">Record Cash Payment</button>
         </form>
       </td></tr>
       <tr><td colspan="8" class="text-right">
         <form role="form" method="post" class="form form-inline" action="pieces_bought">
-          <input type="hidden" name="id" value="{{ attendee.id }}" />
+          <input type="hidden" name="id" value="{{ receipt.attendee.id }}" />
           <div class="input-group">
-          <span class="input-group-addon">$</span><input type="text" class="form-control" name="amount" placeholder="{{ '%0.2f' % attendee.art_show_owed }}" />
+          <span class="input-group-addon">$</span><input type="text" class="form-control" name="amount" placeholder="{{ '%0.2f' % receipt.owed }}" />
           </div>
           <button type="submit" class="btn btn-success">Begin Card Payment</button>
         </form>
@@ -128,18 +128,18 @@
       {% endif %}
       <tr><td colspan="8" class="text-right">
         <form role="form" method="post" class="form form-inline" action="record_payment">
-          <input type="hidden" name="id" value="{{ attendee.id }}" />
+          <input type="hidden" name="id" value="{{ receipt.attendee.id }}" />
           <input type="hidden" name="type" value="{{ c.REFUND }}" />
           <div class="input-group">
-          <span class="input-group-addon">$</span><input type="text" class="form-control" name="amount" placeholder="{{ '%0.2f' % (attendee.art_show_paid / 100) }}" />
+          <span class="input-group-addon">$</span><input type="text" class="form-control" name="amount" placeholder="{{ '%0.2f' % (receipt.paid / 100) }}" />
           </div>
           <button type="submit" class="btn btn-success">Record Refund</button>
         </form>
       </td></tr>
-      {% if not attendee.art_show_owed %}
-      <tr><td colspan="8" class="text-right"><button class="btn btn-primary" id="print_receipt">Print Receipt</button></td></tr>
+      {% if not receipt.owed %}
+      <tr><td colspan="8" class="text-right"><button class="btn btn-primary" id="print_receipt">Print & Close Out Receipt</button></td></tr>
       {% endif %}
-      {% for payment in attendee.art_show_payments %}
+      {% for payment in receipt.art_show_payments %}
       <tr><td colspan="8" class="text-right">
         {% if payment.type == c.REFUND %}
         Refund of
@@ -159,7 +159,7 @@
     $('.modal').modal('show');
     $().ready(function() {
         $("#choose_modal").on("hidden.bs.modal", function () {
-            window.location.assign('?id={{ attendee.id }}');
+            window.location.assign('?id={{ receipt.attendee.id }}');
         });
     });
 </script>

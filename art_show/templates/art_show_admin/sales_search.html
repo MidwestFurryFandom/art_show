@@ -75,8 +75,8 @@
       </td>
       {% if c.PREASSIGNED_BADGE_TYPES %}<td>{{ attendee.badge_printed_name }}</td>{% endif %}
       {% if c.NUMBERED_BADGES %}<td>{{ attendee.badge_num }}</td>{% endif %}
-      <td>{{ '%0.2f' % (attendee.art_show_owed / 100) }}</td>
-      <td>{{ attendee.art_show_purchases|length }}</td>
+      <td>{{ '%0.2f' % (attendee.art_show_receipt.owed / 100) if attendee.art_show_receipt }}</td>
+      <td>{{ attendee.art_show_receipt.pieces|length }}</td>
       <td><a class="btn btn-primary" target="_sale" href="pieces_bought?id={{ attendee.id }}">Process Sale</a></td>
       {% endblock tablerows %}
     </tr>

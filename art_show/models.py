@@ -220,18 +220,16 @@ class ArtShowApplication(MagModel):
 
 
 class ArtShowPiece(MagModel):
-    app_id = Column(UUID, ForeignKey('art_show_application.id',
-                                     ondelete='SET NULL'), nullable=True)
+    app_id = Column(UUID, ForeignKey('art_show_application.id', ondelete='SET NULL'), nullable=True)
     app = relationship('ArtShowApplication', foreign_keys=app_id,
                          cascade='save-update, merge',
                          backref=backref('art_show_pieces',
                                          cascade='save-update, merge'))
-    buyer_id = Column(UUID, ForeignKey('attendee.id',
-                                     ondelete='SET NULL'), nullable=True)
-    buyer = relationship('Attendee', foreign_keys=buyer_id,
-                       cascade='save-update, merge',
-                       backref=backref('art_show_purchases',
-                                       cascade='save-update, merge'))
+    receipt_id = Column(UUID, ForeignKey('art_show_receipt.id', ondelete='SET NULL'), nullable=True)
+    receipt = relationship('ArtShowReceipt', foreign_keys=receipt_id,
+                           cascade='save-update, merge',
+                           backref=backref('pieces',
+                                           cascade='save-update, merge'))
     piece_id = Column(Integer)
     name = Column(UnicodeText)
     for_sale = Column(Boolean, default=False)
@@ -275,20 +273,63 @@ class ArtShowPiece(MagModel):
 
 
 class ArtShowPayment(MagModel):
-    attendee_id = Column(UUID, ForeignKey('attendee.id',
-                                       ondelete='SET NULL'), nullable=True)
-    attendee = relationship('Attendee', foreign_keys=attendee_id,
-                         cascade='save-update, merge',
-                         backref=backref('art_show_payments',
-                                         cascade='save-update, merge'))
+    receipt_id = Column(UUID, ForeignKey('art_show_receipt.id', ondelete='SET NULL'), nullable=True)
+    receipt = relationship('ArtShowReceipt', foreign_keys=receipt_id,
+                           cascade='save-update, merge',
+                           backref=backref('art_show_payments',
+                                           cascade='save-update, merge'))
     amount = Column(Integer, default=0)
     type = Column(Choice(c.ART_SHOW_PAYMENT_OPTS), default=c.STRIPE, admin_only=True)
     when = Column(UTCDateTime, default=lambda: datetime.now(UTC))
 
 
+class ArtShowReceipt(MagModel):
+    invoice_num = Column(Integer, default=0)
+    attendee_id = Column(UUID, ForeignKey('attendee.id', ondelete='SET NULL'), nullable=True)
+    attendee = relationship('Attendee', foreign_keys=attendee_id,
+                            cascade='save-update, merge',
+                            backref=backref('art_show_receipts',
+                                            cascade='save-update, merge'))
+    open = Column(Boolean, default=True)
+
+    @property
+    def subtotal(self):
+        cost = 0
+        for piece in self.pieces:
+            cost += piece.sale_price
+        return cost
+
+    @property
+    def tax(self):
+        return self.subtotal * (c.SALES_TAX / 10000)
+
+    @property
+    def total(self):
+        return self.subtotal + self.tax
+
+    @property
+    def paid(self):
+        paid = 0
+        for payment in self.art_show_payments:
+            if payment.type == c.REFUND:
+                paid -= payment.amount
+            else:
+                paid += payment.amount
+        return paid
+
+    @property
+    def owed(self):
+        return max(0, ((self.total * 100) - self.paid) / 100)
+
+
 @Session.model_mixin
 class Attendee:
     art_show_bidder = relationship('ArtShowBidder', backref=backref('attendee', load_on_pending=True), uselist=False)
+    art_show_purchases = relationship(
+        'ArtShowPiece',
+        backref='buyer',
+        cascade='save-update,merge,refresh-expire,expunge',
+        secondary='art_show_receipt')
 
     @presave_adjustment
     def not_attending_need_not_pay(self):
@@ -322,33 +363,10 @@ class Attendee:
         return cost
 
     @property
-    def art_show_purchases_sum(self):
-        cost = 0
-        for piece in self.art_show_purchases:
-            cost += piece.sale_price
-        return cost
-
-    @property
-    def art_show_tax(self):
-        return self.art_show_purchases_sum * (c.SALES_TAX / 10000)
-
-    @property
-    def art_show_purchases_total(self):
-        return self.art_show_purchases_sum + self.art_show_tax
-
-    @property
-    def art_show_paid(self):
-        paid = 0
-        for payment in self.art_show_payments:
-            if payment.type == c.REFUND:
-                paid -= payment.amount
-            else:
-                paid += payment.amount
-        return paid
-
-    @property
-    def art_show_owed(self):
-        return max(0, ((self.art_show_purchases_total * 100) - self.art_show_paid) / 100)
+    def art_show_receipt(self):
+        open_receipts = [receipt for receipt in self.art_show_receipts if receipt.open]
+        if open_receipts:
+            return open_receipts[0]
 
     @property
     def full_address(self):
