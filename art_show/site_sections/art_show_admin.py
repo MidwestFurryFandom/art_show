@@ -381,7 +381,7 @@ class Root:
             message = 'No matches found'
 
         if not search_text:
-            attendees = [a for a in attendees if a.art_show_owed]
+            attendees = [a for a in attendees if a.art_show_receipt and not a.art_show_receipt.owed]
 
         pages = range(1, int(math.ceil(count / 100)) + 1)
         attendees = attendees[-100 + 100*page: 100*page]
