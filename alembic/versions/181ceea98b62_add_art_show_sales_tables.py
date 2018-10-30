@@ -56,7 +56,7 @@ def upgrade():
     sa.Column('id', residue.UUID(), nullable=False),
     sa.Column('invoice_num', sa.Integer(), server_default='0', nullable=False),
     sa.Column('attendee_id', residue.UUID(), nullable=True),
-    sa.Column('open', sa.Boolean(), server_default='True', nullable=False),
+    sa.Column('closed', residue.UTCDateTime(), nullable=True),
     sa.ForeignKeyConstraint(['attendee_id'], ['attendee.id'], name=op.f('fk_art_show_receipt_attendee_id_attendee'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_art_show_receipt'))
     )

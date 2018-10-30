@@ -1,7 +1,7 @@
 import random
 import string
 
-from sqlalchemy import func
+from sqlalchemy import case, func
 from datetime import datetime
 from pytz import UTC
 
@@ -290,7 +290,16 @@ class ArtShowReceipt(MagModel):
                             cascade='save-update, merge',
                             backref=backref('art_show_receipts',
                                             cascade='save-update, merge'))
-    open = Column(Boolean, default=True)
+    closed = Column(UTCDateTime, nullable=True)
+
+    @presave_adjustment
+    def add_invoice_num(self):
+        if not self.invoice_num:
+            from uber.models import Session
+            with Session() as session:
+                highest_num = session.query(func.max(ArtShowReceipt.invoice_num)).first()
+
+            self.invoice_num = 1 if not highest_num else highest_num[0] + 1
 
     @property
     def subtotal(self):
@@ -320,6 +329,19 @@ class ArtShowReceipt(MagModel):
     @property
     def owed(self):
         return max(0, ((self.total * 100) - self.paid) / 100)
+
+    @property
+    def stripe_payments(self):
+        return [payment for payment in self.art_show_payments if payment.type == c.STRIPE]
+
+    @property
+    def stripe_total(self):
+        return sum([payment.amount for payment in self.art_show_payments if payment.type == c.STRIPE])
+
+    @property
+    def cash_total(self):
+        return sum([payment.amount for payment in self.art_show_payments if payment.type == c.CASH]) - sum(
+            [payment.amount for payment in self.art_show_payments if payment.type == c.REFUND])
 
 
 @Session.model_mixin
@@ -364,7 +386,7 @@ class Attendee:
 
     @property
     def art_show_receipt(self):
-        open_receipts = [receipt for receipt in self.art_show_receipts if receipt.open]
+        open_receipts = [receipt for receipt in self.art_show_receipts if not receipt.closed]
         if open_receipts:
             return open_receipts[0]
 

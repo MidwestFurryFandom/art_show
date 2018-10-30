@@ -397,16 +397,22 @@ class Root:
         }
 
     def pieces_bought(self, session, id, search_text='', message='', **params):
-        attendee = session.attendee(id)
-        if not attendee.art_show_receipt:
-            receipt = ArtShowReceipt(attendee=attendee)
-            session.add(receipt)
-            session.commit()
+        try:
+            receipt = session.art_show_receipt(id)
+        except:
+            attendee = session.attendee(id)
+            if not attendee.art_show_receipt:
+                receipt = ArtShowReceipt(attendee=attendee)
+                session.add(receipt)
+                session.commit()
+            else:
+                receipt = attendee.art_show_receipt
         else:
-            receipt = attendee.art_show_receipt
+            attendee = receipt.attendee
 
         must_choose = False
         unclaimed_pieces = []
+        unpaid_pieces = []
         charge = None
 
         if search_text:
@@ -419,29 +425,53 @@ class Root:
             else:
                 pieces = session.query(ArtShowPiece).filter(ArtShowPiece.name.ilike('%{}%'.format(search_text)))
 
-            unclaimed_pieces = pieces.filter(ArtShowPiece.buyer == None, ArtShowPiece.status != c.RETURN)
+            unclaimed_pieces = pieces.filter(ArtShowPiece.buyer == None,
+                                             ArtShowPiece.status != c.RETURN)
+            unclaimed_pieces = [piece for piece in unclaimed_pieces if piece.sale_price > 0]
+            unpaid_pieces = pieces.join(ArtShowReceipt).filter(ArtShowReceipt.closed != None,
+                                                               ArtShowPiece.status != c.PAID)
+            unpaid_pieces = [piece for piece in unpaid_pieces if piece.sale_price > 0]
 
             if pieces.count() == 0:
                 message = "No pieces found with ID or title {}.".format(search_text)
-            elif unclaimed_pieces.count() == 0:
-                if pieces.count() == 1 and pieces.one().buyer == attendee:
-                    message = "That piece ({}) is already assigned to this buyer!".format(search_text)
-                elif pieces.count() == 1:
-                    message = "That piece ({}) is assigned to another buyer!".format(search_text)
+            elif len(unclaimed_pieces) == 0 and len(unpaid_pieces) == 0:
+                if pieces.count() == 1:
+                    msg_piece = pieces.one()
+                    if msg_piece.receipt == receipt:
+                        message = "That piece ({}) is already on this receipt.".format(msg_piece.artist_and_piece_id)
+                    elif msg_piece.sale_price <= 0:
+                        message = "That piece ({}) doesn't have a valid sale price." \
+                            .format(msg_piece.artist_and_piece_id)
+                    elif msg_piece.status == c.RETURN:
+                        message = "That piece ({}) is marked {}.".format(msg_piece.artist_and_piece_id,
+                                                                         msg_piece.status_label)
+                    elif msg_piece in attendee.art_show_purchases:
+                        message = "That piece ({}) was already sold to this buyer."\
+                            .format(msg_piece.artist_and_piece_id)
+                    else:
+                        message = "That piece ({}) was already sold to another buyer."\
+                            .format(msg_piece.artist_and_piece_id)
                 else:
-                    message = "All matching pieces for '{}' are assigned to other buyers!".format(search_text)
-            elif unclaimed_pieces.count() > 1:
+                    message = "None of the matching pieces for '{}' can be claimed.".format(search_text)
+            elif len(unclaimed_pieces) > 1 or (len(unclaimed_pieces) == 0 and len(unpaid_pieces) > 1):
                 message = "There were multiple pieces found matching '{}.' Please choose one.".format(search_text)
                 must_choose = True
 
             if not message:
-                piece = unclaimed_pieces.one()
-                piece.receipt = receipt
-                session.add(piece)
-                message = 'Piece {} successfully claimed'.format(piece.artist_and_piece_id)
+                if len(unclaimed_pieces) == 0 and len(unpaid_pieces) == 1:
+                    piece = unpaid_pieces[0]
+                elif len(unclaimed_pieces) == 1:
+                    piece = unclaimed_pieces[0]
+                else:
+                    message = "Something went wrong! Try again?"
+
+                if not message:
+                    piece.receipt = receipt
+                    session.add(piece)
+                    message = 'Piece {} successfully claimed'.format(piece.artist_and_piece_id)
 
             if not must_choose:
-                raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
+                raise HTTPRedirect('pieces_bought?id={}&message={}', receipt.id, message)
         elif 'amount' in params:
             amount = params['amount'] or receipt.owed
             charge = Charge(targets=[attendee],
@@ -454,40 +484,38 @@ class Root:
             'receipt': receipt,
             'message': message,
             'must_choose': must_choose,
-            'pieces': unclaimed_pieces,
+            'pieces': unclaimed_pieces or unpaid_pieces,
             'charge': charge,
         }
 
     def unclaim_piece(self, session, id, piece_id, **params):
-        attendee = session.attendee(id)
+        receipt = session.art_show_receipt(id)
         piece = session.art_show_piece(piece_id)
-        receipt = attendee.art_show_receipt
 
         if piece.receipt != receipt:
             raise HTTPRedirect('pieces_bought?id={}&message={}',
-                               attendee.id,
+                               receipt.id,
                                "Can't unclaim piece: it already doesn't belong to this buyer.")
         elif (receipt.owed - piece.sale_price < 0) and receipt.art_show_payments:
             raise HTTPRedirect('pieces_bought?id={}&message={}',
-                               attendee.id,
+                               receipt.id,
                                "Can't unclaim piece: it's already been paid for.")
         else:
             piece.receipt = None
             session.add(piece)
             raise HTTPRedirect('pieces_bought?id={}&message={}',
-                               attendee.id,
+                               receipt.id,
                                'Piece {} successfully unclaimed'.format(piece.artist_and_piece_id))
 
     def record_payment(self, session, id, amount=None, type=c.CASH):
-        attendee = session.attendee(id)
-        receipt = attendee.art_show_receipt
+        receipt = session.art_show_receipt(id)
 
         if type == str(c.CASH):
             amount = amount or receipt.owed
-            message = 'Cash payment of ${} recorded'.format('%0.2f' % amount)
+            message = 'Cash payment of ${} recorded'.format('%0.2f' % float(amount))
         else:
             amount = amount or receipt.paid / 100
-            message = 'Refund of ${} recorded'.format('%0.2f' % amount)
+            message = 'Refund of ${} recorded'.format('%0.2f' % float(amount))
 
         session.add(ArtShowPayment(
             receipt=receipt,
@@ -495,7 +523,23 @@ class Root:
             type=type,
         ))
 
-        raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
+        raise HTTPRedirect('pieces_bought?id={}&message={}', receipt.attendee.id, message)
+
+    def print_receipt(self, session, id, **params):
+        receipt = session.art_show_receipt(id)
+
+        if not receipt.closed:
+            receipt.closed = localized_now()
+            for piece in receipt.pieces:
+                piece.status = c.PAID
+                session.add(piece)
+
+            session.add(receipt)
+            session.commit()
+
+        return {
+            'receipt': receipt,
+        }
 
     @unrestricted
     @credit_card
@@ -504,11 +548,12 @@ class Root:
         message = charge.charge_cc(session, stripeToken)
         attendee_id = charge.attendees[0].id
         attendee = session.attendee(attendee_id)
+        receipt = attendee.art_show_receipt
         if message:
             raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
         else:
             session.add(ArtShowPayment(
-                attendee=attendee,
+                receipt=receipt,
                 amount=charge.amount,
                 type=c.STRIPE,
             ))

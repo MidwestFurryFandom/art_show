@@ -17,11 +17,13 @@
 </head><body>
 <div class="panel-body">
   <div class="form-horizontal">
+    {% block printform %}
     {% if type == "bidder" %}
       {{ bidder_signup_macros.sign_up_form(model, True) }}
     {% elif type == "artist" %}
       {{ artist_checkin_macros.check_in_form(model, True) }}
     {% endif %}
+    {% endblock %}
   </div>
 </div>
 </body></html>
