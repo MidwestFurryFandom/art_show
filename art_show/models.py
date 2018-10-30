@@ -305,7 +305,7 @@ class ArtShowReceipt(MagModel):
     def subtotal(self):
         cost = 0
         for piece in self.pieces:
-            cost += piece.sale_price
+            cost += piece.sale_price * 100
         return cost
 
     @property
@@ -314,7 +314,7 @@ class ArtShowReceipt(MagModel):
 
     @property
     def total(self):
-        return self.subtotal + self.tax
+        return int(self.subtotal + self.tax)
 
     @property
     def paid(self):
@@ -328,7 +328,7 @@ class ArtShowReceipt(MagModel):
 
     @property
     def owed(self):
-        return max(0, ((self.total * 100) - self.paid) / 100)
+        return max(0, self.total - self.paid)
 
     @property
     def stripe_payments(self):
