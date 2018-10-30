@@ -33,9 +33,9 @@
   </tr>
   {% endfor %}
   <tr><td colspan="6"></td></tr>
-  <tr><td colspan="4"></td><td><strong>TOTAL Pretax</strong></td><td>${{ '%0.2f' % receipt.subtotal }}</td></tr>
-  <tr><td colspan="4"></td><td><strong>Tax</strong></td><td>${{ '%0.2f' % receipt.tax }}</td></tr>
-  <tr><td colspan="4"></td><td><strong>Grand Total</strong></td><td>${{ '%0.2f' % receipt.total }}</td></tr>
+  <tr><td colspan="4"></td><td><strong>TOTAL Pretax</strong></td><td>${{ '%0.2f' % (receipt.subtotal / 100) }}</td></tr>
+  <tr><td colspan="4"></td><td><strong>Tax</strong></td><td>${{ '%0.2f' % (receipt.tax / 100) }}</td></tr>
+  <tr><td colspan="4"></td><td><strong>Grand Total</strong></td><td>${{ '%0.2f' % (receipt.total / 100) }}</td></tr>
   <tr></tr>
   {% for payment in receipt.stripe_payments %}
   <tr>

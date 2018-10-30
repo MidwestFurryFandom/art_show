@@ -4,6 +4,7 @@ import os
 import re
 import math
 
+from decimal import Decimal
 from sqlalchemy import or_, and_
 from io import BytesIO
 
@@ -473,9 +474,13 @@ class Root:
             if not must_choose:
                 raise HTTPRedirect('pieces_bought?id={}&message={}', receipt.id, message)
         elif 'amount' in params:
-            amount = params['amount'] or receipt.owed
+            if params['amount']:
+                amount = int(Decimal(params['amount']) * 100)
+            else:
+                amount = receipt.owed
+
             charge = Charge(targets=[attendee],
-                            amount=int(100 * float(amount)),
+                            amount=amount,
                             description='{}ayment for {}\'s art show purchases'.format(
                                 'P' if amount == receipt.total else 'Partial p',
                                 attendee.full_name))
@@ -507,19 +512,22 @@ class Root:
                                receipt.id,
                                'Piece {} successfully unclaimed'.format(piece.artist_and_piece_id))
 
-    def record_payment(self, session, id, amount=None, type=c.CASH):
+    def record_payment(self, session, id, amount='', type=c.CASH):
         receipt = session.art_show_receipt(id)
+
+        if amount:
+            amount = int(Decimal(amount) * 100)
 
         if type == str(c.CASH):
             amount = amount or receipt.owed
-            message = 'Cash payment of ${} recorded'.format('%0.2f' % float(amount))
+            message = 'Cash payment of ${} recorded'.format('%0.2f' % float(amount / 100))
         else:
-            amount = amount or receipt.paid / 100
-            message = 'Refund of ${} recorded'.format('%0.2f' % float(amount))
+            amount = amount or receipt.paid
+            message = 'Refund of ${} recorded'.format('%0.2f' % float(amount / 100))
 
         session.add(ArtShowPayment(
             receipt=receipt,
-            amount=float(amount)*100,
+            amount=amount,
             type=type,
         ))
 
