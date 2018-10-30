@@ -326,6 +326,8 @@ class Root:
             bidder = session.art_show_bidder(params)
         else:
             params.pop('id')
+            if 'cellphone' in params and params['cellphone']:
+                attendee.cellphone = params.pop('cellphone')
             bidder = ArtShowBidder()
             bidder.apply(params, restricted=False)
             attendee.art_show_bidder = bidder
@@ -334,7 +336,9 @@ class Root:
             bidder.signed_up = localized_now()
             success = 'Bidder signup complete'
 
-        message = check(bidder)
+        message = check(attendee)
+        if not message:
+            message = check(bidder)
         if message:
             session.rollback()
             return {'error': message}
