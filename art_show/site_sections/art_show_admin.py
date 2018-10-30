@@ -14,7 +14,7 @@ from uber.models import Attendee, Tracking, ArbitraryCharge
 from uber.utils import Charge, check, localized_now, Order
 
 from art_show.config import config
-from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPiece
+from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPayment, ArtShowPiece, ArtShowReceipt
 
 @all_renderable(c.ART_SHOW)
 class Root:
@@ -94,7 +94,7 @@ class Root:
         }
 
     def artist_check_in_out(self, session, checkout=False, message=''):
-        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        filters = []
         if checkout:
             filters.append(ArtShowApplication.checked_in != None)
         else:
@@ -243,7 +243,7 @@ class Root:
             pdf.set_font("Arial", size=12)
             pdf.set_xy(81 + xplus, 54 + yplus)
             pdf.cell(160, 24,
-                     txt=(piece.app.banner_name or piece.app.artist_name or piece.app.attendee.full_name),
+                     txt=(piece.app.display_name),
                      ln=1, align="C")
             pdf.set_xy(81 + xplus, 80 + yplus)
             pdf.cell(160, 24, txt=piece.name, ln=1, align="C")
@@ -271,7 +271,7 @@ class Root:
         return pdf.output(dest='S').encode('latin-1')
 
     def bidder_signup(self, session, message='', page=1, search_text='', order=''):
-        filters = [Attendee.checked_in != None] if c.AT_THE_CON else []
+        filters = []
         search_text = search_text.strip()
         if search_text:
             order = order or 'badge_printed_name'
@@ -279,7 +279,7 @@ class Root:
                 attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
                     ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
             else:
-                # Sorting by bidder number requires a join, which would filter out anyone without a bidder num
+                # Sorting by bidder number requires a join, which would filter out anyone without a bidder number
                 order = 'badge_printed_name' if order == 'bidder_num' else order
                 try:
                     badge_num = int(search_text)
@@ -292,14 +292,13 @@ class Root:
         else:
             attendees = session.query(Attendee).join(Attendee.art_show_bidder)
 
-        count = attendees.count()
-
         if 'bidder_num' in str(order) or not order:
             attendees = attendees.join(Attendee.art_show_bidder).order_by(
                 ArtShowBidder.bidder_num.desc() if '-' in str(order) else ArtShowBidder.bidder_num)
         else:
             attendees = attendees.order(order)
 
+        count = attendees.count()
         page = int(page) or 1
 
         if not count:
@@ -341,18 +340,234 @@ class Root:
         else:
             session.commit()
 
-        return {'id': bidder.id,
-                'attendee_id': attendee.id,
-                'bidder_num': bidder.bidder_num,
-                'error': message,
-                'success': success}
+        return {
+            'id': bidder.id,
+            'attendee_id': attendee.id,
+            'bidder_num': bidder.bidder_num,
+            'error': message,
+            'success': success
+        }
 
     def print_bidder_form(self, session, id, **params):
         bidder = session.art_show_bidder(id)
         attendee = bidder.attendee
 
-        return {'model': attendee,
-                'type': 'bidder'}
+        return {
+            'model': attendee,
+            'type': 'bidder'
+        }
+
+    def sales_search(self, session, message='', page=1, search_text='', order=''):
+        filters = []
+        search_text = search_text.strip()
+        if search_text:
+            order = order or 'badge_num'
+            if re.match('\w-[0-9]{4}', search_text):
+                attendees = session.query(Attendee).join(Attendee.art_show_bidder).filter(
+                    ArtShowBidder.bidder_num.ilike('%{}%'.format(search_text[2:])))
+            else:
+                # Sorting by bidder number requires a join, which would filter out anyone without a bidder number
+                order = 'badge_num' if order == 'bidder_num' else order
+                try:
+                    badge_num = int(search_text)
+                except:
+                    raise HTTPRedirect('sales_search?message={}', 'Please search by bidder number or badge number.')
+                else:
+                    filters.append(or_(Attendee.badge_num == badge_num))
+                attendees = session.query(Attendee).filter(*filters)
+        else:
+            attendees = session.query(Attendee).join(Attendee.art_show_receipts)
+
+        if 'bidder_num' in str(order):
+            attendees = attendees.join(Attendee.art_show_bidder).order_by(
+                ArtShowBidder.bidder_num.desc() if '-' in str(order) else ArtShowBidder.bidder_num)
+        else:
+            attendees = attendees.order(order or 'badge_num')
+
+        count = attendees.count()
+        page = int(page) or 1
+
+        if not count:
+            message = 'No matches found'
+
+        if not search_text:
+            attendees = [a for a in attendees if a.art_show_owed]
+
+        pages = range(1, int(math.ceil(count / 100)) + 1)
+        attendees = attendees[-100 + 100*page: 100*page]
+
+        return {
+            'message':        message,
+            'page':           page,
+            'pages':          pages,
+            'search_text':    search_text,
+            'search_results': bool(search_text),
+            'attendees':      attendees,
+            'order':          Order(order),
+        }
+
+    def pieces_bought(self, session, id, search_text='', message='', **params):
+        try:
+            receipt = session.art_show_receipt(id)
+        except:
+            attendee = session.attendee(id)
+            if not attendee.art_show_receipt:
+                receipt = ArtShowReceipt(attendee=attendee)
+                session.add(receipt)
+                session.commit()
+            else:
+                receipt = attendee.art_show_receipt
+        else:
+            attendee = receipt.attendee
+
+        must_choose = False
+        unclaimed_pieces = []
+        unpaid_pieces = []
+        charge = None
+
+        if search_text:
+            if re.match('\w+-[0-9]+', search_text):
+                artist_id, piece_id = search_text.split('-')
+                pieces = session.query(ArtShowPiece).join(ArtShowPiece.app).filter(
+                    ArtShowPiece.piece_id == int(piece_id),
+                    ArtShowApplication.artist_id == artist_id.upper()
+                )
+            else:
+                pieces = session.query(ArtShowPiece).filter(ArtShowPiece.name.ilike('%{}%'.format(search_text)))
+
+            unclaimed_pieces = pieces.filter(ArtShowPiece.buyer == None,
+                                             ArtShowPiece.status != c.RETURN)
+            unclaimed_pieces = [piece for piece in unclaimed_pieces if piece.sale_price > 0]
+            unpaid_pieces = pieces.join(ArtShowReceipt).filter(ArtShowReceipt.closed != None,
+                                                               ArtShowPiece.status != c.PAID)
+            unpaid_pieces = [piece for piece in unpaid_pieces if piece.sale_price > 0]
+
+            if pieces.count() == 0:
+                message = "No pieces found with ID or title {}.".format(search_text)
+            elif len(unclaimed_pieces) == 0 and len(unpaid_pieces) == 0:
+                if pieces.count() == 1:
+                    msg_piece = pieces.one()
+                    if msg_piece.receipt == receipt:
+                        message = "That piece ({}) is already on this receipt.".format(msg_piece.artist_and_piece_id)
+                    elif msg_piece.sale_price <= 0:
+                        message = "That piece ({}) doesn't have a valid sale price." \
+                            .format(msg_piece.artist_and_piece_id)
+                    elif msg_piece.status == c.RETURN:
+                        message = "That piece ({}) is marked {}.".format(msg_piece.artist_and_piece_id,
+                                                                         msg_piece.status_label)
+                    elif msg_piece in attendee.art_show_purchases:
+                        message = "That piece ({}) was already sold to this buyer."\
+                            .format(msg_piece.artist_and_piece_id)
+                    else:
+                        message = "That piece ({}) was already sold to another buyer."\
+                            .format(msg_piece.artist_and_piece_id)
+                else:
+                    message = "None of the matching pieces for '{}' can be claimed.".format(search_text)
+            elif len(unclaimed_pieces) > 1 or (len(unclaimed_pieces) == 0 and len(unpaid_pieces) > 1):
+                message = "There were multiple pieces found matching '{}.' Please choose one.".format(search_text)
+                must_choose = True
+
+            if not message:
+                if len(unclaimed_pieces) == 0 and len(unpaid_pieces) == 1:
+                    piece = unpaid_pieces[0]
+                elif len(unclaimed_pieces) == 1:
+                    piece = unclaimed_pieces[0]
+                else:
+                    message = "Something went wrong! Try again?"
+
+                if not message:
+                    piece.receipt = receipt
+                    session.add(piece)
+                    message = 'Piece {} successfully claimed'.format(piece.artist_and_piece_id)
+
+            if not must_choose:
+                raise HTTPRedirect('pieces_bought?id={}&message={}', receipt.id, message)
+        elif 'amount' in params:
+            amount = params['amount'] or receipt.owed
+            charge = Charge(targets=[attendee],
+                            amount=int(100 * float(amount)),
+                            description='{}ayment for {}\'s art show purchases'.format(
+                                'P' if amount == receipt.total else 'Partial p',
+                                attendee.full_name))
+
+        return {
+            'receipt': receipt,
+            'message': message,
+            'must_choose': must_choose,
+            'pieces': unclaimed_pieces or unpaid_pieces,
+            'charge': charge,
+        }
+
+    def unclaim_piece(self, session, id, piece_id, **params):
+        receipt = session.art_show_receipt(id)
+        piece = session.art_show_piece(piece_id)
+
+        if piece.receipt != receipt:
+            raise HTTPRedirect('pieces_bought?id={}&message={}',
+                               receipt.id,
+                               "Can't unclaim piece: it already doesn't belong to this buyer.")
+        elif (receipt.owed - piece.sale_price < 0) and receipt.art_show_payments:
+            raise HTTPRedirect('pieces_bought?id={}&message={}',
+                               receipt.id,
+                               "Can't unclaim piece: it's already been paid for.")
+        else:
+            piece.receipt = None
+            session.add(piece)
+            raise HTTPRedirect('pieces_bought?id={}&message={}',
+                               receipt.id,
+                               'Piece {} successfully unclaimed'.format(piece.artist_and_piece_id))
+
+    def record_payment(self, session, id, amount=None, type=c.CASH):
+        receipt = session.art_show_receipt(id)
+
+        if type == str(c.CASH):
+            amount = amount or receipt.owed
+            message = 'Cash payment of ${} recorded'.format('%0.2f' % float(amount))
+        else:
+            amount = amount or receipt.paid / 100
+            message = 'Refund of ${} recorded'.format('%0.2f' % float(amount))
+
+        session.add(ArtShowPayment(
+            receipt=receipt,
+            amount=float(amount)*100,
+            type=type,
+        ))
+
+        raise HTTPRedirect('pieces_bought?id={}&message={}', receipt.attendee.id, message)
+
+    def print_receipt(self, session, id, **params):
+        receipt = session.art_show_receipt(id)
+
+        if not receipt.closed:
+            receipt.closed = localized_now()
+            for piece in receipt.pieces:
+                piece.status = c.PAID
+                session.add(piece)
+
+            session.add(receipt)
+            session.commit()
+
+        return {
+            'receipt': receipt,
+        }
+
+    @unrestricted
+    @credit_card
+    def purchases_charge(self, session, payment_id, stripeToken):
+        charge = Charge.get(payment_id)
+        message = charge.charge_cc(session, stripeToken)
+        attendee_id = charge.attendees[0].id
+        attendee = session.attendee(attendee_id)
+        receipt = attendee.art_show_receipt
+        if message:
+            raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, message)
+        else:
+            session.add(ArtShowPayment(
+                receipt=receipt,
+                amount=charge.amount,
+                type=c.STRIPE,
+            ))
+            raise HTTPRedirect('pieces_bought?id={}&message={}', attendee.id, 'Charge successfully processed')
 
     @unrestricted
     def sales_charge_form(self, message='', amount=None, description='',

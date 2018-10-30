@@ -1,7 +1,9 @@
 import random
 import string
 
-from sqlalchemy import func
+from sqlalchemy import case, func
+from datetime import datetime
+from pytz import UTC
 
 from uber.config import c
 from uber.models import Session
@@ -154,6 +156,10 @@ class ArtShowApplication(MagModel):
         return new_agent_code
 
     @property
+    def display_name(self):
+        return self.banner_name or self.artist_name or self.attendee.full_name
+
+    @property
     def incomplete_reason(self):
         if self.status not in [c.APPROVED, c.PAID]:
             return self.status_label
@@ -214,12 +220,16 @@ class ArtShowApplication(MagModel):
 
 
 class ArtShowPiece(MagModel):
-    app_id = Column(UUID, ForeignKey('art_show_application.id',
-                                     ondelete='SET NULL'), nullable=True)
+    app_id = Column(UUID, ForeignKey('art_show_application.id', ondelete='SET NULL'), nullable=True)
     app = relationship('ArtShowApplication', foreign_keys=app_id,
                          cascade='save-update, merge',
                          backref=backref('art_show_pieces',
                                          cascade='save-update, merge'))
+    receipt_id = Column(UUID, ForeignKey('art_show_receipt.id', ondelete='SET NULL'), nullable=True)
+    receipt = relationship('ArtShowReceipt', foreign_keys=receipt_id,
+                           cascade='save-update, merge',
+                           backref=backref('pieces',
+                                           cascade='save-update, merge'))
     piece_id = Column(Integer)
     name = Column(UnicodeText)
     for_sale = Column(Boolean, default=False)
@@ -230,6 +240,7 @@ class ArtShowPiece(MagModel):
     print_run_total = Column(Integer, default=0, nullable=True)
     opening_bid = Column(Integer, default=0, nullable=True)
     quick_sale_price = Column(Integer, default=0, nullable=True)
+    winning_bid = Column(Integer, default=0, nullable=True)
     no_quick_sale = Column(Boolean, default=False)
 
     status = Column(Choice(c.ART_PIECE_STATUS_OPTS), default=c.EXPECTED,
@@ -241,8 +252,12 @@ class ArtShowPiece(MagModel):
             self.piece_id = int(self.app.highest_piece_id) + 1
 
     @property
-    def barcode_data(self):
+    def artist_and_piece_id(self):
         return str(self.app.artist_id) + "-" + str(self.piece_id)
+
+    @property
+    def barcode_data(self):
+        return self.artist_and_piece_id
 
     @property
     def valid_quick_sale(self):
@@ -252,9 +267,91 @@ class ArtShowPiece(MagModel):
     def valid_for_sale(self):
         return self.for_sale and self.opening_bid
 
+    @property
+    def sale_price(self):
+        return self.winning_bid or self.quick_sale_price if self.valid_quick_sale else self.winning_bid
+
+
+class ArtShowPayment(MagModel):
+    receipt_id = Column(UUID, ForeignKey('art_show_receipt.id', ondelete='SET NULL'), nullable=True)
+    receipt = relationship('ArtShowReceipt', foreign_keys=receipt_id,
+                           cascade='save-update, merge',
+                           backref=backref('art_show_payments',
+                                           cascade='save-update, merge'))
+    amount = Column(Integer, default=0)
+    type = Column(Choice(c.ART_SHOW_PAYMENT_OPTS), default=c.STRIPE, admin_only=True)
+    when = Column(UTCDateTime, default=lambda: datetime.now(UTC))
+
+
+class ArtShowReceipt(MagModel):
+    invoice_num = Column(Integer, default=0)
+    attendee_id = Column(UUID, ForeignKey('attendee.id', ondelete='SET NULL'), nullable=True)
+    attendee = relationship('Attendee', foreign_keys=attendee_id,
+                            cascade='save-update, merge',
+                            backref=backref('art_show_receipts',
+                                            cascade='save-update, merge'))
+    closed = Column(UTCDateTime, nullable=True)
+
+    @presave_adjustment
+    def add_invoice_num(self):
+        if not self.invoice_num:
+            from uber.models import Session
+            with Session() as session:
+                highest_num = session.query(func.max(ArtShowReceipt.invoice_num)).first()
+
+            self.invoice_num = 1 if not highest_num else highest_num[0] + 1
+
+    @property
+    def subtotal(self):
+        cost = 0
+        for piece in self.pieces:
+            cost += piece.sale_price
+        return cost
+
+    @property
+    def tax(self):
+        return self.subtotal * (c.SALES_TAX / 10000)
+
+    @property
+    def total(self):
+        return self.subtotal + self.tax
+
+    @property
+    def paid(self):
+        paid = 0
+        for payment in self.art_show_payments:
+            if payment.type == c.REFUND:
+                paid -= payment.amount
+            else:
+                paid += payment.amount
+        return paid
+
+    @property
+    def owed(self):
+        return max(0, ((self.total * 100) - self.paid) / 100)
+
+    @property
+    def stripe_payments(self):
+        return [payment for payment in self.art_show_payments if payment.type == c.STRIPE]
+
+    @property
+    def stripe_total(self):
+        return sum([payment.amount for payment in self.art_show_payments if payment.type == c.STRIPE])
+
+    @property
+    def cash_total(self):
+        return sum([payment.amount for payment in self.art_show_payments if payment.type == c.CASH]) - sum(
+            [payment.amount for payment in self.art_show_payments if payment.type == c.REFUND])
+
+
 @Session.model_mixin
 class Attendee:
     art_show_bidder = relationship('ArtShowBidder', backref=backref('attendee', load_on_pending=True), uselist=False)
+    art_show_purchases = relationship(
+        'ArtShowPiece',
+        backref='buyer',
+        cascade='save-update,merge,refresh-expire,expunge',
+        secondary='art_show_receipt')
 
     @presave_adjustment
     def not_attending_need_not_pay(self):
@@ -275,6 +372,12 @@ class Attendee:
             for app in self.art_show_applications:
                 cost += app.total_cost
         return cost
+
+    @property
+    def art_show_receipt(self):
+        open_receipts = [receipt for receipt in self.art_show_receipts if not receipt.closed]
+        if open_receipts:
+            return open_receipts[0]
 
     @property
     def full_address(self):

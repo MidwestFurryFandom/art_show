@@ -12,8 +12,7 @@ app, c.PAGE_PATH,
 
 <div class="panel panel-default">
 
-  <h2>Art Show Application Form{% if app.attendee %} for
-    <a href="../registration/form?id={{ app.attendee.id }}">{{ app.attendee.full_name }}{% endif %}</a></h2>
+  <h2>Art Show Application Form{% if app.attendee %} for {{ app.attendee|form_link }}{% endif %}</a></h2>
 
   <div class="panel-body">
     <form method="post" id="new_agent" action="../art_show_applications/new_agent" role="form">
