@@ -128,7 +128,11 @@ class Root:
                 app.checked_out = localized_now()
             session.commit()
 
-        attendee.apply(params, restricted=False)
+        attendee_params = dict(params)
+        for field_name in ['country', 'region', 'zip_code', 'address1', 'address2', 'city']:
+            attendee_params[field_name] = params.get('attendee_{}'.format(field_name), '')
+
+        attendee.apply(attendee_params, restricted=False)
 
         if c.COLLECT_FULL_ADDRESS and attendee.country == 'United States':
             attendee.international = False
@@ -142,34 +146,44 @@ class Root:
         else:
             session.commit()
 
-        for id in params.get('piece_ids', []):
-            piece = session.art_show_piece(id)
-            piece_params = dict()
-            for field_name in ['gallery', 'status', 'name', 'opening_bid', 'quick_sale_price']:
-                piece_params[field_name] = params.get('{}{}'.format(field_name, id), '')
+        piece_ids = params.get('piece_ids' + app.id)
 
-            # Correctly handle admins entering '0' for a price
+        if piece_ids:
             try:
-                opening_bid = int(piece_params['opening_bid'])
-            except:
-                opening_bid = piece_params['opening_bid']
-            try:
-                quick_sale_price = int(piece_params['quick_sale_price'])
-            except:
-                quick_sale_price = piece_params['quick_sale_price']
-
-            piece_params['for_sale'] = True if opening_bid else False
-            piece_params['no_quick_sale'] = False if quick_sale_price else True
-
-            piece.apply(piece_params, restricted=False)
-            message = check(piece)
-            if message:
-                session.rollback()
-                break
+                session.art_show_piece(piece_ids)
+            except Exception:
+                pieces = piece_ids
             else:
-                if 'check_in' in params and params['check_in'] and piece.status == c.EXPECTED:
-                    piece.status = c.HUNG
-                session.commit() # We save as we go so it's less annoying if there's an error
+                pieces = [piece_ids]
+
+            for id in pieces:
+                piece = session.art_show_piece(id)
+                piece_params = dict()
+                for field_name in ['gallery', 'status', 'name', 'opening_bid', 'quick_sale_price']:
+                    piece_params[field_name] = params.get('{}{}'.format(field_name, id), '')
+
+                # Correctly handle admins entering '0' for a price
+                try:
+                    opening_bid = int(piece_params['opening_bid'])
+                except Exception:
+                    opening_bid = piece_params['opening_bid']
+                try:
+                    quick_sale_price = int(piece_params['quick_sale_price'])
+                except Exception:
+                    quick_sale_price = piece_params['quick_sale_price']
+
+                piece_params['for_sale'] = True if opening_bid else False
+                piece_params['no_quick_sale'] = False if quick_sale_price else True
+
+                piece.apply(piece_params, restricted=False)
+                message = check(piece)
+                if message:
+                    session.rollback()
+                    break
+                else:
+                    if 'check_in' in params and params['check_in'] and piece.status == c.EXPECTED:
+                        piece.status = c.HUNG
+                    session.commit()  # We save as we go so it's less annoying if there's an error
 
         return {'error': message,
                 'success': 'Application updated'}

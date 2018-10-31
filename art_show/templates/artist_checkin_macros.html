@@ -78,7 +78,9 @@
 {{ macros.form_group(app.attendee, 'legal_name', label="Artist Legal Name", placeholder="Name exactly as it appears on Photo ID", is_readonly=printable) }}
 
 <script type="text/javascript">{% include "region_opts.html" %}</script>
-{{ macros.address_form(app.attendee, label_prefix="Artist", is_readonly=printable) }}
+{% if app.attendee.badge_status != c.NOT_ATTENDING %}
+{{ macros.address_form(app.attendee, name_prefix="attendee_", label_prefix="Artist", is_readonly=printable) }}
+{% endif %}
 
 {% if app.delivery_method == c.BY_MAIL %}
   {% if not app.business_name and printable %}
@@ -159,7 +161,7 @@
     <tbody>
     {% for piece in app.art_show_pieces|sort(attribute='piece_id')|sort(attribute='gallery_label') %}
     <tr class="piece-row" data-piece_id="{{ piece.piece_id }}">
-      <td> {{ piece.artist_and_piece_id }} <input type="hidden" name="piece_ids" value="{{ piece.id }}" /> </td>
+      <td> {{ piece.artist_and_piece_id }} <input type="hidden" name="piece_ids{{ app.id }}" value="{{ piece.id }}" /> </td>
       {% if not printable %} <td>
         <select name="status{{ piece.id }}" class="form-control">
           {{ options(c.ART_PIECE_STATUS_OPTS, piece.status) }}
