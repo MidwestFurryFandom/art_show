@@ -299,7 +299,7 @@ class ArtShowReceipt(MagModel):
             with Session() as session:
                 highest_num = session.query(func.max(ArtShowReceipt.invoice_num)).first()
 
-            self.invoice_num = 1 if not highest_num else highest_num[0] + 1
+            self.invoice_num = 1 if not highest_num[0] else highest_num[0] + 1
 
     @property
     def subtotal(self):
