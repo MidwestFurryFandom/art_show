@@ -128,7 +128,11 @@ class Root:
                 app.checked_out = localized_now()
             session.commit()
 
-        attendee.apply(params, restricted=False)
+        attendee_params = dict(params)
+        for field_name in ['country', 'region', 'zip_code', 'address1', 'address2', 'city']:
+            attendee_params[field_name] = params.get('attendee_{}'.format(field_name), '')
+
+        attendee.apply(attendee_params, restricted=False)
 
         if c.COLLECT_FULL_ADDRESS and attendee.country == 'United States':
             attendee.international = False
@@ -142,7 +146,7 @@ class Root:
         else:
             session.commit()
 
-        for id in params.get('piece_ids', []):
+        for id in params.get('piece_ids'+app.id, []):
             piece = session.art_show_piece(id)
             piece_params = dict()
             for field_name in ['gallery', 'status', 'name', 'opening_bid', 'quick_sale_price']:
