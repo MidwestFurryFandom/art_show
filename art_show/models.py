@@ -314,7 +314,7 @@ class ArtShowReceipt(MagModel):
 
     @property
     def total(self):
-        return int(self.subtotal + self.tax)
+        return round(self.subtotal + self.tax)
 
     @property
     def paid(self):
