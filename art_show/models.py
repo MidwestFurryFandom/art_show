@@ -1,6 +1,10 @@
 import random
 import string
 
+from sqlalchemy import case, func
+from datetime import datetime
+from pytz import UTC
+
 from uber.config import c
 from uber.models import Session
 from uber.models import MagModel
@@ -9,9 +13,9 @@ from uber.models.types import Choice, DefaultColumn as Column,\
     default_relationship as relationship
 
 from residue import CoerceUTF8 as UnicodeText, UTCDateTime, UUID
-from sqlalchemy.orm import backref
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import backref, joinedload
 from sqlalchemy.types import Integer, Boolean
-from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import ForeignKey, Index
 
 
@@ -152,6 +156,10 @@ class ArtShowApplication(MagModel):
         return new_agent_code
 
     @property
+    def display_name(self):
+        return self.banner_name or self.artist_name or self.attendee.full_name
+
+    @property
     def incomplete_reason(self):
         if self.status not in [c.APPROVED, c.PAID]:
             return self.status_label
@@ -212,12 +220,16 @@ class ArtShowApplication(MagModel):
 
 
 class ArtShowPiece(MagModel):
-    app_id = Column(UUID, ForeignKey('art_show_application.id',
-                                     ondelete='SET NULL'), nullable=True)
+    app_id = Column(UUID, ForeignKey('art_show_application.id', ondelete='SET NULL'), nullable=True)
     app = relationship('ArtShowApplication', foreign_keys=app_id,
                          cascade='save-update, merge',
                          backref=backref('art_show_pieces',
                                          cascade='save-update, merge'))
+    receipt_id = Column(UUID, ForeignKey('art_show_receipt.id', ondelete='SET NULL'), nullable=True)
+    receipt = relationship('ArtShowReceipt', foreign_keys=receipt_id,
+                           cascade='save-update, merge',
+                           backref=backref('pieces',
+                                           cascade='save-update, merge'))
     piece_id = Column(Integer)
     name = Column(UnicodeText)
     for_sale = Column(Boolean, default=False)
@@ -228,6 +240,7 @@ class ArtShowPiece(MagModel):
     print_run_total = Column(Integer, default=0, nullable=True)
     opening_bid = Column(Integer, default=0, nullable=True)
     quick_sale_price = Column(Integer, default=0, nullable=True)
+    winning_bid = Column(Integer, default=0, nullable=True)
     no_quick_sale = Column(Boolean, default=False)
 
     status = Column(Choice(c.ART_PIECE_STATUS_OPTS), default=c.EXPECTED,
@@ -239,8 +252,12 @@ class ArtShowPiece(MagModel):
             self.piece_id = int(self.app.highest_piece_id) + 1
 
     @property
-    def barcode_data(self):
+    def artist_and_piece_id(self):
         return str(self.app.artist_id) + "-" + str(self.piece_id)
+
+    @property
+    def barcode_data(self):
+        return self.artist_and_piece_id
 
     @property
     def valid_quick_sale(self):
@@ -250,8 +267,91 @@ class ArtShowPiece(MagModel):
     def valid_for_sale(self):
         return self.for_sale and self.opening_bid
 
+    @property
+    def sale_price(self):
+        return self.winning_bid or self.quick_sale_price if self.valid_quick_sale else self.winning_bid
+
+
+class ArtShowPayment(MagModel):
+    receipt_id = Column(UUID, ForeignKey('art_show_receipt.id', ondelete='SET NULL'), nullable=True)
+    receipt = relationship('ArtShowReceipt', foreign_keys=receipt_id,
+                           cascade='save-update, merge',
+                           backref=backref('art_show_payments',
+                                           cascade='save-update, merge'))
+    amount = Column(Integer, default=0)
+    type = Column(Choice(c.ART_SHOW_PAYMENT_OPTS), default=c.STRIPE, admin_only=True)
+    when = Column(UTCDateTime, default=lambda: datetime.now(UTC))
+
+
+class ArtShowReceipt(MagModel):
+    invoice_num = Column(Integer, default=0)
+    attendee_id = Column(UUID, ForeignKey('attendee.id', ondelete='SET NULL'), nullable=True)
+    attendee = relationship('Attendee', foreign_keys=attendee_id,
+                            cascade='save-update, merge',
+                            backref=backref('art_show_receipts',
+                                            cascade='save-update, merge'))
+    closed = Column(UTCDateTime, nullable=True)
+
+    @presave_adjustment
+    def add_invoice_num(self):
+        if not self.invoice_num:
+            from uber.models import Session
+            with Session() as session:
+                highest_num = session.query(func.max(ArtShowReceipt.invoice_num)).first()
+
+            self.invoice_num = 1 if not highest_num[0] else highest_num[0] + 1
+
+    @property
+    def subtotal(self):
+        cost = 0
+        for piece in self.pieces:
+            cost += piece.sale_price * 100
+        return cost
+
+    @property
+    def tax(self):
+        return self.subtotal * (c.SALES_TAX / 10000)
+
+    @property
+    def total(self):
+        return round(self.subtotal + self.tax)
+
+    @property
+    def paid(self):
+        paid = 0
+        for payment in self.art_show_payments:
+            if payment.type == c.REFUND:
+                paid -= payment.amount
+            else:
+                paid += payment.amount
+        return paid
+
+    @property
+    def owed(self):
+        return max(0, self.total - self.paid)
+
+    @property
+    def stripe_payments(self):
+        return [payment for payment in self.art_show_payments if payment.type == c.STRIPE]
+
+    @property
+    def stripe_total(self):
+        return sum([payment.amount for payment in self.art_show_payments if payment.type == c.STRIPE])
+
+    @property
+    def cash_total(self):
+        return sum([payment.amount for payment in self.art_show_payments if payment.type == c.CASH]) - sum(
+            [payment.amount for payment in self.art_show_payments if payment.type == c.REFUND])
+
+
 @Session.model_mixin
 class Attendee:
+    art_show_bidder = relationship('ArtShowBidder', backref=backref('attendee', load_on_pending=True), uselist=False)
+    art_show_purchases = relationship(
+        'ArtShowPiece',
+        backref='buyer',
+        cascade='save-update,merge,refresh-expire,expunge',
+        secondary='art_show_receipt')
 
     @presave_adjustment
     def not_attending_need_not_pay(self):
@@ -265,17 +365,6 @@ class Attendee:
             for app in art_apps:
                 app.agent_id = self.id
 
-    @presave_adjustment
-    def mark_paid_if_paid(self):
-        # Allows us to fix some data errors -- we won't need this after 2018
-        if not self.amount_unpaid:
-            if self.paid == c.NOT_PAID:
-                self.paid = c.HAS_PAID
-
-            for app in self.art_show_applications:
-                if app.status == c.APPROVED:
-                    app.status = c.PAID
-
     @cost_property
     def art_show_app_cost(self):
         cost = 0
@@ -285,11 +374,15 @@ class Attendee:
         return cost
 
     @property
+    def art_show_receipt(self):
+        open_receipts = [receipt for receipt in self.art_show_receipts if not receipt.closed]
+        if open_receipts:
+            return open_receipts[0]
+
+    @property
     def full_address(self):
-        if self.country and self.city \
-                and (self.region
-                     or self.country not in ['United States', 'Canada']) \
-                and self.address1:
+        if self.country and self.city and (
+                    self.region or self.country not in ['United States', 'Canada']) and self.address1:
             return True
 
     @property
@@ -299,3 +392,32 @@ class Attendee:
                 if app.total_cost and app.status != c.PAID:
                     return '../art_show_applications/edit?id={}'.format(app.id)
         return 'attendee_donation_form?id={}'.format(self.id)
+
+
+class ArtShowBidder(MagModel):
+    attendee_id = Column(UUID, ForeignKey('attendee.id', ondelete='SET NULL'), nullable=True)
+    bidder_num = Column(UnicodeText)
+    hotel_name = Column(UnicodeText)
+    hotel_room_num = Column(UnicodeText)
+    admin_notes = Column(UnicodeText)
+    signed_up = Column(UTCDateTime, nullable=True)
+
+    @presave_adjustment
+    def add_bidder_num(self):
+        if not self.bidder_num:
+            from uber.models import Session
+            with Session() as session:
+                latest_bidder = session.query(
+                    ArtShowBidder).order_by(ArtShowBidder.bidder_num_stripped.desc()).first()
+
+                next_num = str(min(latest_bidder.bidder_num_stripped + 1, 9999)).zfill(4) if latest_bidder else "0001"
+
+            self.bidder_num = self.attendee.last_name[:1].upper() + "-" + next_num
+
+    @hybrid_property
+    def bidder_num_stripped(self):
+        return int(self.bidder_num[2:]) if self.bidder_num else 0
+
+    @bidder_num_stripped.expression
+    def bidder_num_stripped(cls):
+        return func.cast("0" + func.substr(cls.bidder_num, 3, func.length(cls.bidder_num)), Integer)

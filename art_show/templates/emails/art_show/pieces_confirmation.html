@@ -23,7 +23,7 @@ You have updated your pieces for the Art Show.
         <tbody>
         {% for piece in app.art_show_pieces %}
         <tr class="piece-row" data-piece_id="{{ piece.id }}">
-            <td> {{ app.artist_id }}-{{ piece.piece_id }} </td>
+            <td> {{ piece.artist_and_piece_id }} </td>
             <td> {{ piece.status_label }} </td>
             <td> {{ piece.name }} </td>
             <td> {{ piece.media }} </td>

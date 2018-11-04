@@ -1,0 +1,29 @@
+{% import 'bidder_signup_macros.html' as bidder_signup_macros with context %}
+{% import 'artist_checkin_macros.html' as artist_checkin_macros with context %}
+
+<html moznomarginboxes><head>
+  <script type="text/javascript">
+    setTimeout(function () {
+        window.self.print();
+        window.self.close();
+    }, 250);
+  </script>
+  <link rel="stylesheet" href="{{ c.URL_BASE }}/static/styles/bootstrap.min.css" />
+  <style>.panel-body, .pull-left .pull-right { margin: 0 !important; padding: 0 !important; }
+  @media print { @page { margin: 1.6cm; }
+    .col-sm-3, .col-sm-6, .col-sm-9 { float: left; } .control-label { text-align: right; }
+    .col-sm-9 { width: 75%; } .col-sm-6 { width: 50%; } .col-sm-3 { width: 30%; }
+  } </style>
+</head><body>
+<div class="panel-body">
+  <div class="form-horizontal">
+    {% block printform %}
+    {% if type == "bidder" %}
+      {{ bidder_signup_macros.sign_up_form(model, True) }}
+    {% elif type == "artist" %}
+      {{ artist_checkin_macros.check_in_form(model, True) }}
+    {% endif %}
+    {% endblock %}
+  </div>
+</div>
+</body></html>
