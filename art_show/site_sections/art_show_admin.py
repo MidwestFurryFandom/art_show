@@ -94,6 +94,104 @@ class Root:
             'message': message,
         }
 
+    def close_out(self, session, message='', piece_code='', bidder_num='', **params):
+        found_piece, found_bidder, data_error = None, None, ''
+
+        if piece_code:
+            if len(piece_code.split('-')) != 2:
+                data_error = 'Please enter just one piece code.'
+            else:
+                artist_id, piece_id = piece_code.split('-')
+                try:
+                    piece_id = int(piece_id)
+                except Exception:
+                    data_error = 'Please use the format XXX-# for the piece code.'
+
+            if not data_error:
+                piece = session.query(ArtShowPiece).join(ArtShowPiece.app).filter(
+                    ArtShowApplication.artist_id.ilike('%{}%'.format(artist_id)),
+                    ArtShowPiece.piece_id == piece_id
+                )
+                if not piece.count():
+                    message = 'Could not find piece with code {}.'.format(piece_code)
+                elif piece.count() > 1:
+                    message = 'Multiple pieces matched the code you entered for some reason.'
+                else:
+                    found_piece = piece.one()
+
+                if bidder_num:
+                    bidder = session.query(ArtShowBidder).filter(ArtShowBidder.bidder_num.ilike(bidder_num))
+                    if not bidder.count():
+                        message = 'Could not find bidder with number {}.'.format(bidder_num)
+                    elif bidder.count() > 1:
+                        message = 'Multiple bidders matched the number you entered for some reason.'
+                    else:
+                        found_bidder = bidder.one().attendee
+            else:
+                message = data_error
+
+        return {
+            'message': message,
+            'piece_code': piece_code,
+            'bidder_num': bidder_num,
+            'piece': found_piece,
+            'bidder': found_bidder
+        }
+
+    def close_out_piece(self, session, message='', **params):
+        if 'id' not in params:
+            raise HTTPRedirect('close_out?piece_code={}&bidder_num={}&message={}',
+                               params['piece_code'], params['bidder_num'], 'Error: no piece ID submitted.')
+
+        piece = session.art_show_piece(params)
+        session.add(piece)
+
+        if piece.status == c.QUICK_SALE and not piece.valid_quick_sale:
+            message = 'This piece does not have a valid quick-sale price.'
+
+        if piece.status == c.RETURN and piece.valid_quick_sale:
+            message = 'This piece has a quick-sale price and so cannot yet be marked as Return to Artist.'
+
+        if 'bidder_id' not in params:
+            if piece.status == c.SOLD:
+                message = 'You cannot mark a piece as Sold without a bidder. Please add a bidder number in step 1.'
+            if piece.winning_bid:
+                message = 'You cannot enter a winning bid without a bidder. Please add a bidder number in step 1.'
+
+        if piece.status != c.SOLD:
+            if 'bidder_id' in params:
+                message = 'You cannot assign a piece to a bidder\'s receipt without marking it as Sold.'
+            if not piece.winning_bid:
+                message = 'You cannot enter a winning bid for a piece without also marking it as Sold.'
+
+        if piece.status == c.SOLD and not piece.winning_bid:
+            message = 'Please enter the winning bid for this piece.'
+
+        if piece.status == c.PAID:
+            message = 'Please process sales via the sales page.'
+
+        if 'bidder_id' in params:
+            attendee = session.attendee(params['bidder_id'])
+            if not attendee:
+                message = 'Attendee not found for some reason.'
+            elif not attendee.art_show_receipt:
+                receipt = ArtShowReceipt(attendee=attendee)
+                session.add(receipt)
+                session.commit()
+            else:
+                receipt = attendee.art_show_receipt
+
+            if not message:
+                piece.receipt = receipt
+
+        if message:
+            session.rollback()
+            raise HTTPRedirect('close_out?piece_code={}&bidder_num={}&message={}',
+                               params['piece_code'], params['bidder_num'], message)
+        else:
+            raise HTTPRedirect('close_out?message={}',
+                               'Close-out successful for piece {}'.format(piece.artist_and_piece_id))
+
     def artist_check_in_out(self, session, checkout=False, message=''):
         filters = []
         if checkout:
