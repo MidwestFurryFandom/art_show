@@ -161,7 +161,7 @@ class Root:
         if piece.status != c.SOLD:
             if 'bidder_id' in params:
                 message = 'You cannot assign a piece to a bidder\'s receipt without marking it as Sold.'
-            if not piece.winning_bid:
+            if piece.winning_bid:
                 message = 'You cannot enter a winning bid for a piece without also marking it as Sold.'
 
         if piece.status == c.SOLD and not piece.winning_bid:
