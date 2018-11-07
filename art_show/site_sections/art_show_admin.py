@@ -31,7 +31,15 @@ class Root:
         else:
             app = session.art_show_application(params)
         attendee = None
-        app_paid = max(0, app.attendee.amount_paid - (app.attendee.total_cost - app.total_cost))
+        app_paid = 0 if new_app else max(0, app.attendee.amount_paid - (app.attendee.total_cost - app.total_cost))
+
+        attendee_attrs = session.query(Attendee.id, Attendee.last_first, Attendee.badge_type, Attendee.badge_num) \
+            .filter(Attendee.first_name != '', Attendee.badge_status not in [c.INVALID_STATUS, c.WATCHED_STATUS])
+
+        attendees = [
+            (id, '{} - {}{}'.format(name.title(), c.BADGES[badge_type], ' #{}'.format(badge_num) if badge_num else ''))
+            for id, name, badge_type, badge_num in attendee_attrs]
+
         if cherrypy.request.method == 'POST':
             if new_app:
                 attendee, message = \
@@ -66,8 +74,8 @@ class Root:
             'attendee': attendee,
             'app_paid': app_paid,
             'attendee_id': app.attendee_id or params.get('attendee_id', ''),
-            'all_attendees': session.all_attendees(),
-            'new_app': new_app
+            'all_attendees': sorted(attendees, key=lambda tup: tup[1]),
+            'new_app': new_app,
         }
 
     def pieces(self, session, id, message=''):
