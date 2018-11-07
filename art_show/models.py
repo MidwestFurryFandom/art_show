@@ -94,6 +94,7 @@ class ArtShowApplication(MagModel):
     city = Column(UnicodeText)
     region = Column(UnicodeText)
     country = Column(UnicodeText)
+    paypal_address = Column(UnicodeText)
     website = Column(UnicodeText)
     special_needs = Column(UnicodeText)
     status = Column(Choice(c.ART_SHOW_STATUS_OPTS), default=c.UNAPPROVED)

@@ -110,10 +110,20 @@ class Root:
             'checkout': checkout,
         }
 
+    def print_check_in_out_form(self, session, id, checkout='', **params):
+        app = session.art_show_application(id)
+
+        return {
+            'model': app,
+            'type': 'artist',
+            'checkout': checkout,
+        }
+
     @ajax
     def save_and_check_in_out(self, session, **params):
         app = session.art_show_application(params['app_id'])
         attendee = app.attendee
+        success = 'Application updated'
 
         app.apply(params, restricted=False)
 
@@ -124,27 +134,30 @@ class Root:
         else:
             if 'check_in' in params and params['check_in']:
                 app.checked_in = localized_now()
+                success = 'Artist successfully checked-in'
             if 'check_out' in params and params['check_out']:
                 app.checked_out = localized_now()
+                success = 'Artist successfully checked-out'
             session.commit()
 
-        attendee_params = dict(params)
-        for field_name in ['country', 'region', 'zip_code', 'address1', 'address2', 'city']:
-            attendee_params[field_name] = params.get('attendee_{}'.format(field_name), '')
+        if 'check_in' in params:
+            attendee_params = dict(params)
+            for field_name in ['country', 'region', 'zip_code', 'address1', 'address2', 'city']:
+                attendee_params[field_name] = params.get('attendee_{}'.format(field_name), '')
 
-        attendee.apply(attendee_params, restricted=False)
+            attendee.apply(attendee_params, restricted=False)
 
-        if c.COLLECT_FULL_ADDRESS and attendee.country == 'United States':
-            attendee.international = False
-        elif c.COLLECT_FULL_ADDRESS:
-            attendee.international = True
+            if c.COLLECT_FULL_ADDRESS and attendee.country == 'United States':
+                attendee.international = False
+            elif c.COLLECT_FULL_ADDRESS:
+                attendee.international = True
 
-        message = check(attendee)
-        if message:
-            session.rollback()
-            return {'error': message}
-        else:
-            session.commit()
+            message = check(attendee)
+            if message:
+                session.rollback()
+                return {'error': message}
+            else:
+                session.commit()
 
         piece_ids = params.get('piece_ids' + app.id)
 
@@ -183,10 +196,15 @@ class Root:
                 else:
                     if 'check_in' in params and params['check_in'] and piece.status == c.EXPECTED:
                         piece.status = c.HUNG
+                    elif 'check_out' in params and params['check_out'] and piece.status == c.HUNG:
+                        piece.status = c.RETURN
                     session.commit()  # We save as we go so it's less annoying if there's an error
 
-        return {'error': message,
-                'success': 'Application updated'}
+        return {
+            'id': app.id,
+            'error': message,
+            'success': success,
+        }
 
     @unrestricted
     def bid_sheet_barcode_generator(self, data):

@@ -17,7 +17,7 @@
         </div>
         <div class="modal-footer">
           <input type="hidden" class="action_or_no_action" name="{{ "check_out" if app.checked_in else "check_in" }}" />
-          <button type="submit" class="btn btn-primary save_app no_action">Save</button>
+          <button type="submit" class="btn btn-primary save_app">Save</button>
           {% if not app.checked_in %}
           <button type="submit" class="btn btn-success save_app action">Save & Check-In</button>
           {% elif not app.checked_out and checkout %}
@@ -34,19 +34,50 @@
 {%- macro check_in_form(app, printable=not admin_area) -%}
 <span{% if printable %} style="font-size: 125%;"{% endif %}>
 
+<input type="hidden" name="app_id" value="{{ app.id }}" />
+{% if checkout %}
+<div class="form-group">
+  <label class="col-sm-3 control-label optional-field">Artist Code</label>
+  <div class="col-sm-6">
+    <div class="form-control-static">
+      {{ app.artist_id }}
+    </div>
+  </div>
+</div>
+<div class="form-group">
+  <label class="col-sm-3 control-label optional-field">Artist Name</label>
+  <div class="col-sm-6">
+    <div class="form-control-static">
+      {{ app.display_name }}{% if app.display_name != app.attendee.full_name %} ({{ app.attendee.full_name }}){% endif %}
+    </div>
+  </div>
+</div>
+{% if app.attendee.country != 'United States' and app.country != 'United States' and printable %}
+<div class="form-group">
+  <label class="col-sm-3 control-label optional-field">Paypal Address</label>
+  <div class="col-sm-6">
+    <div class="form-control-static">
+      {{ app.paypal_address }}
+    </div>
+  </div>
+</div>
+{% elif app.attendee.country != 'United States' and app.country != 'United States' %}
+{{ macros.form_group(app, 'paypal_address', label="Paypal Address", help="The Paypal address for the artist, whose personal address is outside the US.", placeholder='email@example.com') }}
+{% endif %}
+{% else %}
 <div class="pull-left form-control-static">
   <label class="control-label optional-field" style="padding:0;">Location</label>
   {% if printable %}
-    &nbsp;<div style="outline: 1px solid black; width: 4em; height: 3em;" class="text-center">{{ app.locations }}</div>
+  &nbsp;<div style="outline: 1px solid black; width: 4em; height: 3em;" class="text-center">{{ app.locations }}</div>
   {% else %}
   <input class="form-control" type="text" name="locations" value="{{ app.locations }}" placeholder="Space assignments for this artist." />
   {% endif %}
 </div>
-  <div class="pull-right form-control-static" style="padding-top:0;">
+<div class="pull-right form-control-static" style="padding-top:0;">
   <label class="control-label optional-field">Artist ID</label>
-    <br/><span style="font-size: 2em;">{{ app.artist_id }}</span>
+  <br/><span style="font-size: 2em;">{{ app.artist_id }}</span>
 </div>
-<div class="clearfix"><input type="hidden" name="app_id" value="{{ app.id }}" /></div>
+<div class="clearfix"></div>
 <br/><br/>
 {% if not app.artist_name and printable %}
 <div class="form-group">
@@ -133,6 +164,7 @@
   </div>
 </div>
 {% endif %}
+{% endif %}
 {% if not app.check_payable and printable %}
 <div class="form-group">
   <label class="col-sm-3 control-label optional-field">Name on Check</label>
@@ -179,8 +211,9 @@
     </tbody>
   </table>
 </div>
-{% if not printable and not app.checked_in %}<em>NOTE: All "Expected" pieces will become "Hung" upon clicking "Save & Check-In"</em>{% endif %}
-  {% if printable %}
+{% if not printable and not app.checked_in %}<em>NOTE: All "Expected" pieces will become "Hung" upon clicking "Save & Check-In"</em>
+{% elif not printable and not app.checked_out %}<em>NOTE: All "Hung" pieces will become "Return to Artist" upon clicking "Save & Check-Out"</em>{% endif %}
+  {% if printable and not checkout %}
 <br/>
 <span class="text-center">
 <strong><p>I understand that I am giving Midwest Furfest the right to sell my art at the above prices.  I also understand that I will be charged a commission of 10% on all sales and that the convention will collect sales tax on my sales. I also have read and agree to the art show rules.</p>
