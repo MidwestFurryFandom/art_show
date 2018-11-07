@@ -51,3 +51,10 @@ ArtShowAppEmailFixture(
     lambda a: a.status == c.APPROVED and a.is_unpaid,
     when=days_before(14, c.ART_SHOW_PAYMENT_DUE),
     ident='art_show_payment_reminder')
+
+ArtShowAppEmailFixture(
+    '{EVENT_NAME} Art Show piece entry needed',
+    'art_show/pieces_reminder.txt',
+    lambda a: a.status == c.PAID and not a.art_show_pieces,
+    when=days_before(15, c.EPOCH),
+    ident='art_show_pieces_reminder')
