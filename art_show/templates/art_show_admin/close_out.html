@@ -33,7 +33,8 @@
   </div>
   {% if piece and (bidder or not bidder_num) %}
   <div class="panel-body">
-    <strong>Step 2</strong>: Enter the status the piece should change to{% if bidder %} and the winning bid. <br/><strong>This piece will be added to {{ bidder|form_link }}'s receipt</strong>{% endif %}.
+    <strong>Step 2</strong>: Enter the status the piece should change to{% if bidder %} and the winning bid.<br/>
+    <strong>This piece will be added to a receipt for {% if bidder.badge_printed_name %}{{ bidder.badge_printed_name }} ({% endif %}{{ bidder|form_link }}{{ ')' if bidder.badge_printed_name }} and they will be responsible for picking it up during Sales</strong>{% endif %}.
     <form role="form" method="post" action="close_out_piece" class="form-inline">
       <input type="hidden" name="id" value="{{ piece.id }}" />
       {% if bidder %}<input type="hidden" name="bidder_id" value="{{ bidder.id }}" />{% endif %}

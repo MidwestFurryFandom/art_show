@@ -14,25 +14,26 @@
     <h3 class="panel-title">Artist Check-{{ checkout|yesno("Out, In") }}</h3>
   </div>
   <div class="panel-body">
-    <div class="row">
-      <div class="col-sm-3">
-        <a class="btn btn-default" href="form?new_app=True">Add an application</a></div>
-
-      <div class="col-sm-3 col-sm-offset-6 form-inline">
-        <div class="form-group">
-          <div class="control-label">Status</div> <div class="input-group" id="status_filter"></div>
-        </div>
-        <div class="form-group">
-          <div class="control-label">Paid</div> <span id="paid_filter"></span>
-        </div>
+    <div class="pull-left">
+      <a class="btn btn-default" href="form?new_app=True">Add an application</a>
+    </div>
+    <div class="pull-right form-inline">
+      <div class="form-group">
+        <div class="control-label">Status</div> <div class="input-group" id="status_filter"></div>
       </div>
     </div>
+    <div class="clearfix"></div>
     <iframe id="upload_frame" name="upload_frame" style="display:none"></iframe>
     <div id="app_modals">
       {% for app in applications -%}
       {{ artist_checkin_macros.check_in_modal(app) }}
       {%- endfor %}
     </div>
+    <form role="form" method="post" id="print_form" action="print_check_in_out_form">
+      <input type="hidden" name="id" id="print_id" />
+      {% if checkout %}<input type="hidden" name="checkout" value="1" />{% endif %}
+      {{ csrf_token() }}
+    </form>
     <table class="table table-striped datatable">
       <thead><tr>
         <th>Name</th>
@@ -42,7 +43,6 @@
         <th>General Tables</th>
         <th>Mature Panels</th>
         <th>Mature Tables</th>
-        <th>Paid</th>
         <th>Admin Notes</th>
         <th>Check-{{ checkout|yesno("Out,In") }}</th>
       </tr></thead>
@@ -56,8 +56,6 @@
         <td>{{ app.tables }}</td>
         <td>{{ app.panels_ad }}</td>
         <td>{{ app.tables_ad }}</td>
-        <td>{% if app.status == c.APPROVED %}{{ app.is_unpaid|yesno('No,Yes') }}
-          {% else %}N/A ({{ app.incomplete_reason }}){% endif %}</td>
         <td>{{ app.admin_notes }}</td>
         <td>
           {% if not app.checked_in %}
@@ -66,7 +64,7 @@
           <button type="button" class="btn btn-primary open_modal">Check-Out Artist</button>
           {% else %}
           {% if app.checked_out %}<em>Checked-out {{ app.checked_out_local|datetime("%-I:%M%p")|lower }} {{ app.checked_out_local|datetime("%a") }}</em><br/>
-          {% elif app.checked_in %}<em>Checked-in {{ app.checked_in_local|datetime("%-I:%M%p")|lower }} {{ app.checked_in_local|datetime("%a") }}{% endif %}</em><br/>
+          {% elif app.checked_in %}<em>Checked-in {{ app.checked_in_local|datetime("%-I:%M%p")|lower }} {{ app.checked_in_local|datetime("%a") }}</em><br/>{% endif %}
           <button type="button" class="btn btn-primary open_modal">View Artist</button>
           {% endif %}
         </td>
@@ -80,16 +78,21 @@
         var openModal = function(e) {
             e.preventDefault();
             var id = $(this).closest('.app-row').data('app_id');
+            $('#app_modals').find('.modal').removeClass('print_form');
             $('#app_'+id).modal();
         };
 
         $(document).ready(function() {
+            var print = false;
             $('.open_modal').on('click', openModal);
-            $('.action').on('click', function() {
-                $(".action_or_no_action").val(1);
-            });
-            $('.no_action').on('click', function() {
-                $(".action_or_no_action").val('');
+            $('.save_app').on('click', function() {
+                if ($(this).hasClass('action')) {
+                    $('.action_or_no_action').val('1');
+                    print = true;
+                } else {
+                    $('.action_or_no_action').val('');
+                    print = false;
+                }
             });
 
             $('#app_modals').find('form').submit(function(e) {
@@ -106,6 +109,12 @@
                             var response = $.parseJSON(responseText);
                             if (!response['error']) {
                                 var $modals = $('#app_modals').find('.modal');
+
+                                if (print) {
+                                    window.open('', 'print_form_target', 'width=400,height=400,resizeable,scrollbars');
+                                    $('#print_id').val(response['id']);
+                                    $('#print_form').attr('target', 'print_form_target').submit();
+                                }
                                 $modals.modal('hide');
                                 location.href = '?{% if checkout %}checkout=True&{% endif %}message='+response['success'];
                             } else {
