@@ -377,7 +377,7 @@ class Root:
             pdf.cell(132, 22, txt=piece.barcode_data, ln=1, align="C")
             pdf.set_font("Arial", size=8, style='B')
             pdf.set_xy(163 + xplus, 32 + yplus)
-            pdf.cell(132, 12, txt=piece.barcode_data, ln=1, align="C")
+            pdf.cell(132, 12, txt=piece.artist_and_piece_id, ln=1, align="C")
 
             # Artist, Title, Media
             pdf.set_font("Arial", size=12)
