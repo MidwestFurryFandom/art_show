@@ -1,0 +1,49 @@
+{% import 'macros.html' as macros with context %}
+
+{%- macro print_receipt(receipt) -%}
+<table class="table table-bordered" style="margin: 20px; width: calc(100% - 40px);">
+  <tr><td colspan="6" class="text-center"><strong>Midwest FurFest Art Show Receipt</strong></td></tr>
+  <tr>
+    <td colspan="3"><strong>Invoice #:</strong> {{ receipt.invoice_num }}</td>
+    <td colspan="3"><strong>Date and Time</strong> {{ receipt.closed_local|datetime("%m-%d-%Y - %H:%M") }}</td>
+  </tr>
+  <tr>
+    <td colspan="6"><strong>Sold To:</strong> {{ receipt.attendee.full_name }}</td>
+  </tr>
+  <tr><td colspan="6"></td></tr>
+  <tr>
+    <th><nobr>Piece ID</nobr></th>
+    <th>Piece Title</th>
+    <th>Type</th>
+    <th>Medium</th>
+    <th>Artist Name</th>
+    <th><nobr>Sale Price</nobr></th>
+  </tr>
+  {% for piece in receipt.pieces %}
+  <tr>
+    <td> {{ piece.artist_and_piece_id }} </td>
+    <td> {{ piece.name }} </td>
+    <td> {{ piece.type_label }}
+      {% if piece.print_run_num and piece.type == c.PRINT %}({{ piece.print_run_num }} of {{ piece.print_run_total }}){% endif %}
+    </td>
+    <td> {{ piece.media }} </td>
+    <td> {{ piece.app.display_name }} </td>
+    <td> ${{ '%0.2f' % piece.sale_price }}
+    </td>
+  </tr>
+  {% endfor %}
+  <tr><td colspan="6"></td></tr>
+  <tr><td colspan="4"></td><td><strong>TOTAL Pretax</strong></td><td>${{ '%0.2f' % (receipt.subtotal / 100) }}</td></tr>
+  <tr><td colspan="4"></td><td><strong>Tax</strong></td><td>${{ '%0.2f' % (receipt.tax / 100) }}</td></tr>
+  <tr><td colspan="4"></td><td><strong>Grand Total</strong></td><td>${{ '%0.2f' % (receipt.total / 100) }}</td></tr>
+  <tr></tr>
+  {% for payment in receipt.stripe_payments %}
+  <tr>
+    <td colspan="4"></td><td><strong>Total Card {{ loop.index }}</strong></td><td>${{ '%0.2f' % (payment.amount / 100) }}</td>
+  </tr>
+  {% endfor %}
+  <tr><td colspan="4"></td><td><strong>Total Paid Credit</strong></td><td>${{ '%0.2f' % (receipt.stripe_total / 100) }}</td></tr>
+  <tr><td colspan="4"></td><td><strong>Total Paid Cash</strong></td><td>${{ '%0.2f' % (receipt.cash_total / 100) }}</td></tr>
+  <tr><td colspan="4"></td><td><strong>Amount Due:</strong></td><td>${{ '%0.2f' % (receipt.owed / 100) }}</td></tr>
+</table>
+{%- endmacro -%}
