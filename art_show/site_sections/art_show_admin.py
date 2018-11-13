@@ -156,15 +156,10 @@ class Root:
 
         if piece.status == c.QUICK_SALE and not piece.valid_quick_sale:
             message = 'This piece does not have a valid quick-sale price.'
-
-        if piece.status == c.RETURN and piece.valid_quick_sale:
+        elif piece.status == c.RETURN and piece.valid_quick_sale:
             message = 'This piece has a quick-sale price and so cannot yet be marked as Return to Artist.'
-
-        if (piece.winning_bid or piece.status == c.SOLD) and not piece.valid_for_sale:
+        elif (piece.winning_bid or piece.status == c.SOLD) and not piece.valid_for_sale:
             message = 'This piece is not for sale!'
-        elif piece.winning_bid < piece.opening_bid:
-            message = 'The winning bid (${}) cannot be less than the minimum bid (${}).'\
-                .format(piece.winning_bid, piece.opening_bid)
         elif 'bidder_id' not in params:
             if piece.status == c.SOLD:
                 message = 'You cannot mark a piece as Sold without a bidder. Please add a bidder number in step 1.'
@@ -177,6 +172,9 @@ class Root:
                 message = 'You cannot enter a winning bid for a piece without also marking it as Sold.'
         elif piece.status == c.SOLD and not piece.winning_bid:
             message = 'Please enter the winning bid for this piece.'
+        elif piece.status == c.SOLD and piece.winning_bid < piece.opening_bid:
+            message = 'The winning bid (${}) cannot be less than the minimum bid (${}).'\
+                .format(piece.winning_bid, piece.opening_bid)
 
         if piece.status == c.PAID:
             message = 'Please process sales via the sales page.'
