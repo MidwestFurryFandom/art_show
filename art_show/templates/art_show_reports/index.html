@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% import 'artist_checkin_macros.html' as artist_checkin_macros with context %}
+{% block title %}Art Show Admin{% endblock %}
+{% block content %}
+
+<ol class="breadcrumb">
+  <li><a href="../accounts/homepage">Home</a></li>
+  <li>Art Show</li>
+  <li class="active">Admin</li>
+</ol>
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Art Show Reports</h3>
+  </div>
+  <div class="panel-body">
+    <a class="btn btn-default" href="sales_invoices">Sales Invoices</a>
+    <a class="btn btn-default" href="#">High Bids Door Report</a>
+    <a class="btn btn-default" href="#">Mature Auction</a>
+    <a class="btn btn-default" href="#">General Auction</a>
+    <a class="btn btn-default" href="#">Grand Summaries</a>
+    <a class="btn btn-default" href="#">Piece Statuses</a>
+    <a class="btn btn-default" href="#">Artist Payout Invoices</a>
+    <a class="btn btn-default" href="#">Pieces Won by Bidder</a>
+    <a class="btn btn-default" href="#">Banner Name/Location CSV</a>
+    <a class="btn btn-default" href="#">Artist Information CSV</a>
+    <a class="btn btn-default" href="#">Bidder Information CSV</a>
+  </div>
+</div>
+    {% endblock %}
