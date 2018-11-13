@@ -39,3 +39,23 @@ class Root:
             'start': start,
             'end': end,
         }
+
+    def pieces_by_status(self, session, message='', **params):
+        filters = []
+        if 'yes_status' in params:
+            try:
+                yes_status = [int(params['yes_status'])]
+            except Exception:
+                yes_status = list(params['yes_status'])
+            filters.append(ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_(yes_status)))
+        if 'no_status' in params:
+            filters.append(~ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_(params['no_status'])))
+
+        apps = session.query(ArtShowApplication).join(ArtShowApplication.art_show_pieces).filter(*filters).all()
+
+        if not apps:
+            message = 'No pieces found!'
+        return {
+            'message': message,
+            'apps': apps,
+        }
