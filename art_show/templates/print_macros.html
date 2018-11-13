@@ -1,7 +1,7 @@
 {% import 'macros.html' as macros with context %}
 
 {%- macro print_receipt(receipt) -%}
-<table class="table table-bordered" style="margin: 20px; width: calc(100% - 40px);">
+  <table class="table table-bordered" style="margin: 20px; width: calc(100% - 40px);">
   <tr><td colspan="6" class="text-center"><strong>Midwest FurFest Art Show Receipt</strong></td></tr>
   <tr>
     <td colspan="3"><strong>Invoice #:</strong> {{ receipt.invoice_num }}</td>
