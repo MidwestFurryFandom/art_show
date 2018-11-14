@@ -1,5 +1,8 @@
 from uber.config import c
 from uber.decorators import all_renderable
+from uber.utils import localized_now
+
+from sqlalchemy import func
 
 from art_show.config import config
 from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPayment, ArtShowPiece, ArtShowReceipt
@@ -58,4 +61,31 @@ class Root:
         return {
             'message': message,
             'apps': apps,
+        }
+
+    def summary(self, session, message=''):
+        general_pieces = session.query(ArtShowPiece).filter(ArtShowPiece.gallery == c.GENERAL)
+        mature_pieces = session.query(ArtShowPiece).filter(ArtShowPiece.gallery == c.MATURE)
+
+        general_sold = general_pieces.filter(ArtShowPiece.status == c.SOLD)
+        mature_sold = mature_pieces.filter(ArtShowPiece.status == c.SOLD)
+
+        artists_with_pieces = session.query(ArtShowApplication).filter(ArtShowApplication.art_show_pieces != None)
+
+        all_apps = session.query(ArtShowApplication).all()
+
+        return {
+            'message': message,
+            'general_sales_sum': sum([piece.sale_price for piece in general_sold]),
+            'mature_sales_sum': sum([piece.sale_price for piece in mature_sold]),
+            'general_count': general_pieces.count(),
+            'mature_count': mature_pieces.count(),
+            'general_sold_count': general_sold.count(),
+            'mature_sold_count': mature_sold.count(),
+            'artist_count': artists_with_pieces.count(),
+            'general_panels_count': sum([app.panels for app in all_apps]),
+            'mature_panels_count': sum([app.panels_ad for app in all_apps]),
+            'general_tables_count': sum([app.tables for app in all_apps]),
+            'mature_tables_count': sum([app.tables_ad for app in all_apps]),
+            'now': localized_now(),
         }
