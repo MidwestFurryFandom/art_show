@@ -1,7 +1,7 @@
 {% extends "print_form.html" %}{% set admin_area=True %}{% set no_print = True %}
 
 {% block printform %}
-<h3 align="center">{{ "Mature" if mature else "General" }} Auction -- {{ now|datetime("%-d/%m/%Y, %-I:%M%p") }}</h3>
+<h3 align="center">{{ "Mature" if mature else "General" }} Auction -- {{ now|datetime("%m/%d/%Y, %-I:%M%p") }}</h3>
 <table class="table table-bordered" style="margin: 20px; width: calc(100% - 40px);">
   <tr>
     <th>Piece ID</th>
