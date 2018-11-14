@@ -42,11 +42,12 @@ class Root:
             'end': end,
         }
 
-    def high_bids(self, session, message=''):
+    def high_bids(self, session, message='', admin_report=None):
         return {
             'message': message,
             'won_pieces': session.query(ArtShowPiece).join(ArtShowPiece.buyer).join(Attendee.art_show_bidder)
                 .filter(ArtShowPiece.winning_bid.isnot(None), ArtShowPiece.status == c.SOLD),
+            'admin_report': admin_report,
             'now': localized_now(),
         }
 
