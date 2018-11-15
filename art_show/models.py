@@ -258,7 +258,7 @@ class ArtShowPiece(MagModel):
 
     @property
     def barcode_data(self):
-        return self.artist_and_piece_id
+        return "*" + self.artist_and_piece_id + "*"
 
     @property
     def valid_quick_sale(self):

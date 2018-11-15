@@ -2,19 +2,29 @@
 {% import 'artist_checkin_macros.html' as artist_checkin_macros with context %}
 
 <html moznomarginboxes><head>
+  {% if not no_print %}
   <script type="text/javascript">
     setTimeout(function () {
         window.self.print();
         window.self.close();
     }, 250);
   </script>
-  <link rel="stylesheet" href="{{ c.URL_BASE }}/static/styles/bootstrap.min.css" />
-  <style>.panel-body, .pull-left .pull-right { margin: 0 !important; padding: 0 !important; }
-  @media print { @page { margin: 1.6cm; }
+  {% endif %}
+  <link rel="stylesheet" href="{{ c.URL_BASE }}/static/deps/combined.min.css" />
+  <style>
+  @media print {
+    .panel-body, .pull-left .pull-right { margin: 0 !important; padding: 0 !important; }
+    @page { margin: 1.6cm; }
     .col-sm-3, .col-sm-6, .col-sm-9 { float: left; } .control-label { text-align: right; }
     .col-sm-9 { width: 75%; } .col-sm-6 { width: 50%; } .col-sm-3 { width: 30%; }
+    .no-print, .no-print * { display: none !important; }
+    .pagebreak { page-break-before: always; }
   } </style>
 </head><body>
+<div class="no-print panel-body">
+  {% block noprint %}
+  {% endblock %}
+</div>
 <div class="panel-body">
   <div class="form-horizontal">
     {% block printform %}
