@@ -406,8 +406,13 @@ class Root:
             pdf.cell(
                 53, 14, txt=('${:,.2f}'.format(piece.quick_sale_price)) if piece.valid_quick_sale else 'N/A', ln=1)
 
+        import unicodedata
+        filename = str(unicodedata.normalize('NFKD', piece.app.display_name).encode('ascii', 'ignore'))
+        filename = re.sub('[^\w\s-]', '', filename[1:]).strip().lower()
+        filename = re.sub('[-\s]+', '-', filename)
+        filename = filename + "_" + localized_now().strftime("%m%d%Y_%H%M")
 
-        cherrypy.response.headers['Content-Disposition'] = 'attachment; filename=bidsheets.pdf'
+        cherrypy.response.headers['Content-Disposition'] = 'attachment; filename={}.pdf'.format(filename)
         return pdf.output(dest='S').encode('latin-1')
 
     def bidder_signup(self, session, message='', page=1, search_text='', order=''):
