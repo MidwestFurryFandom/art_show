@@ -4,6 +4,9 @@ from uber.utils import localized_now
 
 from sqlalchemy import func
 
+from uber.models import Attendee
+from uber.utils import localized_now
+
 from art_show.config import config
 from art_show.models import ArtShowApplication, ArtShowBidder, ArtShowPayment, ArtShowPiece, ArtShowReceipt
 
@@ -41,6 +44,15 @@ class Root:
             'receipts': receipts,
             'start': start,
             'end': end,
+        }
+
+    def high_bids(self, session, message='', admin_report=None):
+        return {
+            'message': message,
+            'won_pieces': session.query(ArtShowPiece).join(ArtShowPiece.buyer).join(Attendee.art_show_bidder)
+                .filter(ArtShowPiece.winning_bid.isnot(None), ArtShowPiece.status == c.SOLD),
+            'admin_report': admin_report,
+            'now': localized_now(),
         }
 
     def pieces_by_status(self, session, message='', **params):
@@ -87,5 +99,20 @@ class Root:
             'mature_panels_count': sum([app.panels_ad for app in all_apps]),
             'general_tables_count': sum([app.tables for app in all_apps]),
             'mature_tables_count': sum([app.tables_ad for app in all_apps]),
+            'now': localized_now(),
+        }
+
+    def auction_report(self, session, message='', mature=None):
+        filters = [ArtShowPiece.status == c.VOICE_AUCTION]
+
+        if mature:
+            filters.append(ArtShowPiece.gallery == c.MATURE)
+        else:
+            filters.append(ArtShowPiece.gallery == c.GENERAL)
+
+        return {
+            'message': message,
+            'pieces': session.query(ArtShowPiece).filter(*filters).join(ArtShowPiece.app).all(),
+            'mature': mature,
             'now': localized_now(),
         }
