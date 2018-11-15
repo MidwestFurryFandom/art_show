@@ -108,7 +108,6 @@
 {{ macros.name_form_group(app.attendee, label="Artist Full Name", is_readonly=printable) }}
 {{ macros.form_group(app.attendee, 'legal_name', label="Artist Legal Name", placeholder="Name exactly as it appears on Photo ID", is_readonly=printable) }}
 
-<script type="text/javascript">{% include "region_opts.html" %}</script>
 {% if app.attendee.badge_status != c.NOT_ATTENDING %}
 {{ macros.address_form(app.attendee, name_prefix="attendee_", label_prefix="Artist", is_readonly=printable) }}
 {% endif %}
