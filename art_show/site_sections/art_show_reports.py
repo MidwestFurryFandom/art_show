@@ -64,7 +64,11 @@ class Root:
                 yes_status = list(params['yes_status'])
             filters.append(ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_(yes_status)))
         if 'no_status' in params:
-            filters.append(~ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_(params['no_status'])))
+            try:
+                no_status = [int(params['no_status'])]
+            except Exception:
+                no_status = list(params['no_status'])
+            filters.append(~ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_(no_status)))
 
         apps = session.query(ArtShowApplication).join(ArtShowApplication.art_show_pieces).filter(*filters).all()
 
