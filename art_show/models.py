@@ -272,6 +272,10 @@ class ArtShowPiece(MagModel):
     def sale_price(self):
         return self.winning_bid or self.quick_sale_price if self.valid_quick_sale else self.winning_bid
 
+    @property
+    def winning_bidder_num(self):
+        return self.receipt.attendee.art_show_bidder.bidder_num
+
 
 class ArtShowPayment(MagModel):
     receipt_id = Column(UUID, ForeignKey('art_show_receipt.id', ondelete='SET NULL'), nullable=True)
