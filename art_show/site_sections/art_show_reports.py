@@ -1,5 +1,6 @@
 from uber.config import c
 from uber.decorators import all_renderable
+
 from uber.models import Attendee
 from uber.utils import localized_now
 
@@ -69,4 +70,19 @@ class Root:
         return {
             'message': message,
             'apps': apps,
+        }
+
+    def auction_report(self, session, message='', mature=None):
+        filters = [ArtShowPiece.status == c.VOICE_AUCTION]
+
+        if mature:
+            filters.append(ArtShowPiece.gallery == c.MATURE)
+        else:
+            filters.append(ArtShowPiece.gallery == c.GENERAL)
+
+        return {
+            'message': message,
+            'pieces': session.query(ArtShowPiece).filter(*filters).join(ArtShowPiece.app).all(),
+            'mature': mature,
+            'now': localized_now(),
         }
