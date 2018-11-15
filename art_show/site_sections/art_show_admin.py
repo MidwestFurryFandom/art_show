@@ -31,7 +31,7 @@ class Root:
         else:
             app = session.art_show_application(params)
         attendee = None
-        app_paid = 0 if new_app else max(0, app.attendee.amount_paid - (app.attendee.total_cost - app.total_cost))
+        app_paid = 0 if new_app else app.amount_paid
 
         attendee_attrs = session.query(Attendee.id, Attendee.last_first, Attendee.badge_type, Attendee.badge_num) \
             .filter(Attendee.first_name != '', Attendee.badge_status not in [c.INVALID_STATUS, c.WATCHED_STATUS])
@@ -224,6 +224,13 @@ class Root:
             'model': app,
             'type': 'artist',
             'checkout': checkout,
+        }
+
+    def print_artist_invoice(self, session, id, **params):
+        app = session.art_show_application(id)
+
+        return {
+            'app': app,
         }
 
     @ajax

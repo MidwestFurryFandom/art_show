@@ -46,6 +46,17 @@ class Root:
             'end': end,
         }
 
+    def artist_invoices(self, session, message=''):
+        apps = session.query(ArtShowApplication).join(ArtShowApplication.art_show_pieces)\
+            .filter(ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_([c.SOLD, c.PAID]))).all()
+        if not apps:
+            message = "No invoices found!"
+
+        return {
+            'message': message,
+            'apps': apps,
+        }
+
     def high_bids(self, session, message='', admin_report=None):
         return {
             'message': message,
