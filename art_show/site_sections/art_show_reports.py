@@ -197,3 +197,36 @@ class Root:
                 address_model.zip_code,
                 address_model.country,
             ])
+
+    @csv_file
+    def pieces_csv(self, out, session):
+        out.writerow(["Artist Name",
+                      "Artist Code",
+                      "Piece ID",
+                      "Piece Name",
+                      "Status",
+                      "Type",
+                      "Media",
+                      "Minimum Bid",
+                      "QuickSale Price",
+                      "Sale Price",
+                      ])
+
+        for piece in session.query(ArtShowPiece):
+            if piece.type == c.PRINT:
+                piece_type = "{} ({} of {})".format(piece.type_label, piece.print_run_num, piece.print_run_total)
+            else:
+                piece_type = piece.type_label
+
+            out.writerow([
+                piece.app.display_name,
+                piece.app.artist_id,
+                piece.piece_id,
+                piece.name,
+                piece.status_label,
+                piece_type,
+                piece.media,
+                '$' + str(piece.opening_bid) if piece.valid_for_sale else 'N/A',
+                '$' + str(piece.quick_sale_price) if piece.valid_quick_sale else 'N/A',
+                '$' + str(piece.sale_price) if piece.status in [c.SOLD, c.PAID] else 'N/A',
+            ])
