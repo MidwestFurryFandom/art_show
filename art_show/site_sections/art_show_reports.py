@@ -1,5 +1,5 @@
 from uber.config import c
-from uber.decorators import all_renderable
+from uber.decorators import all_renderable, csv_file
 from uber.utils import localized_now
 
 from sqlalchemy import func
@@ -120,3 +120,9 @@ class Root:
             'mature': mature,
             'now': localized_now(),
         }
+
+    @csv_file
+    def banner_csv(self, out, session):
+        out.writerow(['Banner Name', 'Locations'])
+        for app in session.query(ArtShowApplication).filter(ArtShowApplication.locations != ''):
+            out.writerow([app.display_name, app.locations])
