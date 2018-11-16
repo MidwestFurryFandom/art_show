@@ -97,8 +97,8 @@ class Root:
         general_auctioned = general_pieces.filter(ArtShowPiece.voice_auctioned == True)
         mature_auctioned = mature_pieces.filter(ArtShowPiece.voice_auctioned == True)
 
-        general_sold = general_pieces.filter(ArtShowPiece.status == c.SOLD)
-        mature_sold = mature_pieces.filter(ArtShowPiece.status == c.SOLD)
+        general_sold = general_pieces.filter(ArtShowPiece.status.in_([c.SOLD, c.PAID]))
+        mature_sold = mature_pieces.filter(ArtShowPiece.status.in_([c.SOLD, c.PAID]))
 
         artists_with_pieces = session.query(ArtShowApplication).filter(ArtShowApplication.art_show_pieces != None)
 
