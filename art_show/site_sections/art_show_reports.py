@@ -94,6 +94,9 @@ class Root:
         general_pieces = session.query(ArtShowPiece).filter(ArtShowPiece.gallery == c.GENERAL)
         mature_pieces = session.query(ArtShowPiece).filter(ArtShowPiece.gallery == c.MATURE)
 
+        general_auctioned = general_pieces.filter(ArtShowPiece.voice_auctioned == True)
+        mature_auctioned = mature_pieces.filter(ArtShowPiece.voice_auctioned == True)
+
         general_sold = general_pieces.filter(ArtShowPiece.status == c.SOLD)
         mature_sold = mature_pieces.filter(ArtShowPiece.status == c.SOLD)
 
@@ -109,6 +112,8 @@ class Root:
             'mature_count': mature_pieces.count(),
             'general_sold_count': general_sold.count(),
             'mature_sold_count': mature_sold.count(),
+            'general_auctioned_count': general_auctioned.count(),
+            'mature_auctioned_count': mature_auctioned.count(),
             'artist_count': artists_with_pieces.count(),
             'general_panels_count': sum([app.panels for app in all_apps]),
             'mature_panels_count': sum([app.panels_ad for app in all_apps]),
