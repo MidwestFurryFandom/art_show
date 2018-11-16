@@ -126,3 +126,74 @@ class Root:
         out.writerow(['Banner Name', 'Locations'])
         for app in session.query(ArtShowApplication).filter(ArtShowApplication.locations != ''):
             out.writerow([app.display_name, app.locations])
+
+    @csv_file
+    def artist_csv(self, out, session):
+        out.writerow([
+            'Application Status',
+            'Paid?',
+            'Artist Name',
+            'Art Delivery',
+            'General Panels',
+            'General Tables',
+            'Mature Panels',
+            'Mature Tables',
+            'Description',
+            'Website URL',
+            'Special Requests',
+            'Discounted Price',
+            'Admin Notes',
+            'Banner Name',
+            'Piece Count Total',
+            'Badge Status',
+            'Badge Name',
+            'Email',
+            'Phone',
+            'Address 1',
+            'Address 2',
+            'City',
+            'Region',
+            'Postal Code',
+            'Country',
+        ])
+
+        for app in session.query(ArtShowApplication):
+            if app.status == c.PAID:
+                paid = "Yes"
+            elif app.status == c.APPROVED:
+                paid = "No"
+            else:
+                paid = "N/A"
+
+            if app.delivery_method == c.BY_MAIL:
+                address_model = app
+            else:
+                address_model = app.attendee
+
+            out.writerow([
+                app.status_label,
+                paid,
+                app.artist_name or app.attendee.full_name,
+                app.delivery_method_label,
+                app.panels,
+                app.tables,
+                app.panels_ad,
+                app.tables_ad,
+                app.description,
+                app.website,
+                app.special_needs,
+                app.overridden_price,
+                app.admin_notes,
+                app.display_name,
+                len(app.art_show_pieces),
+                app.attendee.badge_status_label,
+                app.attendee.badge_printed_name,
+                app.attendee.email,
+                app.attendee.cellphone,
+                address_model.address1,
+                address_model.address2,
+                address_model.city,
+                address_model.region,
+                address_model.zip_code,
+                address_model.country,
+            ])
