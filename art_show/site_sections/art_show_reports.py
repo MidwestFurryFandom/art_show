@@ -46,6 +46,17 @@ class Root:
             'end': end,
         }
 
+    def artist_invoices(self, session, message=''):
+        apps = session.query(ArtShowApplication).join(ArtShowApplication.art_show_pieces)\
+            .filter(ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_([c.SOLD, c.PAID]))).all()
+        if not apps:
+            message = "No invoices found!"
+
+        return {
+            'message': message,
+            'apps': apps,
+        }
+
     def high_bids(self, session, message='', admin_report=None):
         return {
             'message': message,
@@ -83,8 +94,11 @@ class Root:
         general_pieces = session.query(ArtShowPiece).filter(ArtShowPiece.gallery == c.GENERAL)
         mature_pieces = session.query(ArtShowPiece).filter(ArtShowPiece.gallery == c.MATURE)
 
-        general_sold = general_pieces.filter(ArtShowPiece.status == c.SOLD)
-        mature_sold = mature_pieces.filter(ArtShowPiece.status == c.SOLD)
+        general_auctioned = general_pieces.filter(ArtShowPiece.voice_auctioned == True)
+        mature_auctioned = mature_pieces.filter(ArtShowPiece.voice_auctioned == True)
+
+        general_sold = general_pieces.filter(ArtShowPiece.status.in_([c.SOLD, c.PAID]))
+        mature_sold = mature_pieces.filter(ArtShowPiece.status.in_([c.SOLD, c.PAID]))
 
         artists_with_pieces = session.query(ArtShowApplication).filter(ArtShowApplication.art_show_pieces != None)
 
@@ -98,6 +112,8 @@ class Root:
             'mature_count': mature_pieces.count(),
             'general_sold_count': general_sold.count(),
             'mature_sold_count': mature_sold.count(),
+            'general_auctioned_count': general_auctioned.count(),
+            'mature_auctioned_count': mature_auctioned.count(),
             'artist_count': artists_with_pieces.count(),
             'general_panels_count': sum([app.panels for app in all_apps]),
             'mature_panels_count': sum([app.panels_ad for app in all_apps]),

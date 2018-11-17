@@ -14,11 +14,19 @@
   </tr>
   <tr></tr>
   <tr>
-    <td colspan="2"><strong>Total Taxes</strong></td><td>{{ '%0.2f' % ((general_sales_sum + mature_sales_sum) * (c.SALES_TAX / 10000)) }}</td>
+    <td colspan="2"><strong>Total Taxes</strong></td><td>${{ '%0.2f' % ((general_sales_sum + mature_sales_sum) * (c.SALES_TAX / 10000)) }}</td>
   </tr>
   <tr>
     <td colspan="2"><strong>Tax % Charged</strong></td><td>{{ c.SALES_TAX / 100 }}%</td>
   </tr>
+  <tr></tr>
+  <tr>
+    <td colspan="2"><strong>Total Commission</strong></td><td>{{ '%0.2f' % ((general_sales_sum + mature_sales_sum) * (c.COMMISSION_PCT / 10000)) }}</td>
+  </tr>
+  <tr>
+    <td colspan="2"><strong>Commission % Charged</strong></td><td>{{ c.COMMISSION_PCT / 100 }}%</td>
+  </tr>
+  <tr></tr>
   <tr>
     <td colspan="2"><strong>Total Pieces Entered</strong></td><td>{{ general_count + mature_count }}</td>
   </tr>
@@ -37,6 +45,16 @@
   </tr>
   <tr>
     <td></td><td>Mature</td><td>{{ mature_sold_count }}</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td colspan="2"><strong>Total Pieces Sent to Auction</strong></td><td>{{ general_auctioned_count + mature_auctioned_count }}</td>
+  </tr>
+  <tr>
+    <td></td><td>General</td><td>{{ general_auctioned_count }}</td>
+  </tr>
+  <tr>
+    <td></td><td>Mature</td><td>{{ mature_auctioned_count }}</td>
   </tr>
   <tr></tr>
   <tr>
@@ -80,7 +98,7 @@
     <td colspan="2"><strong>Table Fee</strong></td><td>${{ c.COST_PER_TABLE }}</td>
   </tr>
   <tr>
-    <td colspan="2"><strong>Total Panel Fees</strong></td><td>${{ '%0.2f' % ((general_tables_count + mature_tables_count) * c.COST_PER_TABLE) }}</td>
+    <td colspan="2"><strong>Total Table Fees</strong></td><td>${{ '%0.2f' % ((general_tables_count + mature_tables_count) * c.COST_PER_TABLE) }}</td>
   </tr>
   <tr>
     <td></td><td>General</td><td>${{ '%0.2f' % (general_tables_count * c.COST_PER_TABLE) }}</td>

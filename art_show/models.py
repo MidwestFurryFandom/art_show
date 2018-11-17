@@ -219,6 +219,26 @@ class ArtShowApplication(MagModel):
         else:
             return 0
 
+    @property
+    def total_sales(self):
+        cost = 0
+        for piece in self.art_show_pieces:
+            if piece.status in [c.SOLD, c.PAID]:
+                cost += piece.sale_price * 100
+        return cost
+
+    @property
+    def commission(self):
+        return self.total_sales * (c.COMMISSION_PCT / 10000)
+
+    @property
+    def check_total(self):
+        return round(self.total_sales - self.commission)
+
+    @property
+    def amount_paid(self):
+        return max(0, self.attendee.amount_paid - (self.attendee.total_cost - self.total_cost))
+
 
 class ArtShowPiece(MagModel):
     app_id = Column(UUID, ForeignKey('art_show_application.id', ondelete='SET NULL'), nullable=True)
@@ -243,6 +263,7 @@ class ArtShowPiece(MagModel):
     quick_sale_price = Column(Integer, default=0, nullable=True)
     winning_bid = Column(Integer, default=0, nullable=True)
     no_quick_sale = Column(Boolean, default=False)
+    voice_auctioned = Column(Boolean, default=False)
 
     status = Column(Choice(c.ART_PIECE_STATUS_OPTS), default=c.EXPECTED,
                     admin_only=True)
@@ -251,6 +272,11 @@ class ArtShowPiece(MagModel):
     def create_piece_id(self):
         if not self.piece_id:
             self.piece_id = int(self.app.highest_piece_id) + 1
+
+    @presave_adjustment
+    def set_voice_auctioned(self):
+        if self.status == c.VOICE_AUCTION:
+            self.voice_auctioned = True
 
     @property
     def artist_and_piece_id(self):

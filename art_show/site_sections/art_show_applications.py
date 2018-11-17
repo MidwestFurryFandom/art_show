@@ -105,6 +105,10 @@ class Root:
             if not message:
                 piece.app = app
                 session.add(piece)
+                if not restricted and 'voice_auctioned' not in params:
+                    piece.voice_auctioned = False
+                elif not restricted and 'voice_auctioned' in params and params['voice_auctioned']:
+                    piece.voice_auctioned = True
                 session.commit()
 
         return {'error': message,

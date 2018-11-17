@@ -4,10 +4,10 @@
 <html moznomarginboxes><head>
   {% if not no_print %}
   <script type="text/javascript">
-    setTimeout(function () {
+    window.self.onload = function() {
         window.self.print();
         window.self.close();
-    }, 250);
+    };
   </script>
   {% endif %}
   <script type="text/javascript">{% include "region_opts.html" %}</script>
