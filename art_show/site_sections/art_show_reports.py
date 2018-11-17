@@ -1,5 +1,5 @@
 from uber.config import c
-from uber.decorators import all_renderable
+from uber.decorators import all_renderable, csv_file
 from uber.utils import localized_now
 
 from sqlalchemy import func
@@ -136,3 +136,148 @@ class Root:
             'mature': mature,
             'now': localized_now(),
         }
+
+    @csv_file
+    def banner_csv(self, out, session):
+        out.writerow(['Banner Name', 'Locations'])
+        for app in session.query(ArtShowApplication).filter(ArtShowApplication.locations != ''):
+            out.writerow([app.display_name, app.locations])
+
+    @csv_file
+    def artist_csv(self, out, session):
+        out.writerow(['Application Status',
+                      'Paid?',
+                      'Artist Name',
+                      'Art Delivery',
+                      'General Panels',
+                      'General Tables',
+                      'Mature Panels',
+                      'Mature Tables',
+                      'Description',
+                      'Website URL',
+                      'Special Requests',
+                      'Discounted Price',
+                      'Admin Notes',
+                      'Banner Name',
+                      'Piece Count Total',
+                      'Badge Status',
+                      'Badge Name',
+                      'Email',
+                      'Phone',
+                      'Address 1',
+                      'Address 2',
+                      'City',
+                      'Region',
+                      'Postal Code',
+                      'Country',
+                      ])
+
+        for app in session.query(ArtShowApplication):
+            if app.status == c.PAID:
+                paid = "Yes"
+            elif app.status == c.APPROVED:
+                paid = "No"
+            else:
+                paid = "N/A"
+
+            if app.delivery_method == c.BY_MAIL:
+                address_model = app
+            else:
+                address_model = app.attendee
+
+            out.writerow([app.status_label,
+                          paid,
+                          app.artist_name or app.attendee.full_name,
+                          app.delivery_method_label,
+                          app.panels,
+                          app.tables,
+                          app.panels_ad,
+                          app.tables_ad,
+                          app.description,
+                          app.website,
+                          app.special_needs,
+                          app.overridden_price,
+                          app.admin_notes,
+                          app.display_name,
+                          len(app.art_show_pieces),
+                          app.attendee.badge_status_label,
+                          app.attendee.badge_printed_name,
+                          app.attendee.email,
+                          app.attendee.cellphone,
+                          address_model.address1,
+                          address_model.address2,
+                          address_model.city,
+                          address_model.region,
+                          address_model.zip_code,
+                          address_model.country,
+                          ])
+
+    @csv_file
+    def pieces_csv(self, out, session):
+        out.writerow(["Artist Name",
+                      "Artist Code",
+                      "Piece ID",
+                      "Piece Name",
+                      "Status",
+                      "Type",
+                      "Media",
+                      "Minimum Bid",
+                      "QuickSale Price",
+                      "Sale Price",
+                      ])
+
+        for piece in session.query(ArtShowPiece):
+            if piece.type == c.PRINT:
+                piece_type = "{} ({} of {})".format(piece.type_label, piece.print_run_num, piece.print_run_total)
+            else:
+                piece_type = piece.type_label
+
+            out.writerow([piece.app.display_name,
+                          piece.app.artist_id,
+                          piece.piece_id,
+                          piece.name,
+                          piece.status_label,
+                          piece_type,
+                          piece.media,
+                          '$' + str(piece.opening_bid) if piece.valid_for_sale else 'N/A',
+                          '$' + str(piece.quick_sale_price) if piece.valid_quick_sale else 'N/A',
+                          '$' + str(piece.sale_price) if piece.status in [c.SOLD, c.PAID] else 'N/A',
+                          ])
+
+    @csv_file
+    def bidder_csv(self, out, session):
+        out.writerow(["Bidder Number",
+                      "Full Name",
+                      "Badge Name",
+                      "Address 1",
+                      "Address 2",
+                      "City",
+                      "Region",
+                      "Postal Code",
+                      "Country",
+                      "Phone",
+                      "Hotel",
+                      "Room Number",
+                      "Admin Notes",
+                      ])
+
+        for bidder in session.query(ArtShowBidder).join(ArtShowBidder.attendee):
+            if bidder.attendee.badge_status == c.NOT_ATTENDING and bidder.attendee.art_show_applications:
+                address_model = bidder.attendee.art_show_applications[0]
+            else:
+                address_model = bidder.attendee
+
+            out.writerow([bidder.bidder_num,
+                          bidder.attendee.full_name,
+                          bidder.attendee.badge_printed_name,
+                          address_model.address1,
+                          address_model.address2,
+                          address_model.city,
+                          address_model.region,
+                          address_model.zip_code,
+                          address_model.country,
+                          bidder.attendee.cellphone,
+                          bidder.hotel_name,
+                          bidder.hotel_room_num,
+                          bidder.admin_notes,
+                          ])
