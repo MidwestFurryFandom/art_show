@@ -21,7 +21,7 @@
           {% if not app.checked_in %}
           <button type="submit" class="btn btn-success save_app action">Save & Check-In</button>
           {% elif not app.checked_out and checkout %}
-          <button type="submit" class="btn btn-success save_app action">Save & Check-Out</button>
+          <button type="submit" class="btn btn-success save_app action{{ ' print_invoice' if app.total_sales else '' }}">Save & Check-Out</button>
           {% endif %}
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
         </div>
@@ -174,7 +174,7 @@
   </div>
 </div>
 {% else %}
-{{ macros.form_group(app, 'check_payable', label="Name on Check", placeholder=app.attendee.legal_name or app.attendee.full_name, is_readonly=printable) }}
+{{ macros.form_group(app, 'check_payable', label="Name on Check", placeholder=app.attendee.legal_first_name ~ " " ~ app.attendee.legal_last_name, is_readonly=printable) }}
 {% endif %}
 <br/>
 <div class="table-responsive">
