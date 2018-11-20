@@ -79,7 +79,7 @@ class Root:
                 no_status = [int(params['no_status'])]
             except Exception:
                 no_status = list(params['no_status'])
-            filters.append(~ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_(no_status)))
+            filters.append(ArtShowApplication.art_show_pieces.any(~ArtShowPiece.status.in_(no_status)))
 
         apps = session.query(ArtShowApplication).join(ArtShowApplication.art_show_pieces).filter(*filters).all()
 
@@ -88,6 +88,8 @@ class Root:
         return {
             'message': message,
             'apps': apps,
+            'yes_status': yes_status if 'yes_status' in params else None,
+            'no_status': no_status if 'no_status' in params else None,
         }
 
     def summary(self, session, message=''):
@@ -140,7 +142,7 @@ class Root:
     @csv_file
     def banner_csv(self, out, session):
         out.writerow(['Banner Name', 'Locations'])
-        for app in session.query(ArtShowApplication).filter(ArtShowApplication.locations != ''):
+        for app in session.query(ArtShowApplication).filter(ArtShowApplication.status != c.DECLINED):
             out.writerow([app.display_name, app.locations])
 
     @csv_file
@@ -148,6 +150,7 @@ class Root:
         out.writerow(['Application Status',
                       'Paid?',
                       'Artist Name',
+                      'Full Name',
                       'Art Delivery',
                       'General Panels',
                       'General Tables',
@@ -187,7 +190,8 @@ class Root:
 
             out.writerow([app.status_label,
                           paid,
-                          app.artist_name or app.attendee.full_name,
+                          app.artist_name,
+                          app.attendee.full_name,
                           app.delivery_method_label,
                           app.panels,
                           app.tables,

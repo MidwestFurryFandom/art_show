@@ -97,7 +97,7 @@
     <td>Table Cost</td><td>${{ c.COST_PER_TABLE }}</td>
     <td>Total Table Fee</td><td>${{ '%0.2f' % ((app.tables + app.tables_ad) * c.COST_PER_TABLE) }}</td>
   </tr>
-  <tr><td colspan="4"></td><td>Total Mail-In Fee</td><td>${{ '%0.2f' % c.ART_MAILING_FEE }}</td></tr>
+  {% if app.delivery_method == c.BY_MAIL %}<tr><td colspan="4"></td><td>Total Mail-In Fee</td><td>${{ '%0.2f' % c.ART_MAILING_FEE }}</td></tr>{% endif %}
   <tr><td colspan="4"></td><td><strong>Total Fees</strong></td><td>${{ '%0.2f' % app.total_cost }}</td></tr>
   <tr><td colspan="4"></td><td>Prepaid</td><td>${{ '%0.2f' % app.amount_paid }}</td></tr>
 </table>

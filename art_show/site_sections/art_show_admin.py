@@ -481,6 +481,12 @@ class Root:
                 attendee.cellphone = params.pop('cellphone')
             bidder = ArtShowBidder()
             bidder.apply(params, restricted=False)
+            latest_bidder = session.query(ArtShowBidder).filter(ArtShowBidder.id != bidder.id) \
+                .order_by(ArtShowBidder.bidder_num_stripped.desc()).first()
+
+            next_num = str(min(latest_bidder.bidder_num_stripped + 1, 9999)).zfill(4) if latest_bidder else "0001"
+
+            bidder.bidder_num = attendee.last_name[:1].upper() + "-" + next_num
             attendee.art_show_bidder = bidder
 
         if params['complete']:
@@ -500,6 +506,7 @@ class Root:
             'id': bidder.id,
             'attendee_id': attendee.id,
             'bidder_num': bidder.bidder_num,
+            'bidder_id': bidder.id,
             'error': message,
             'success': success
         }
