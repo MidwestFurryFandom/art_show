@@ -166,6 +166,7 @@
                                 $('#print_id').val(response['id']);
                                 $('#print_form').attr('target', 'print_form_target').submit();
                                 $('#attendee_'+response['attendee_id']).find('.bidder_num').text(response['bidder_num']);
+                                $('#attendee_'+response['attendee_id']).find('.bidder_id').val(response['bidder_id']);
                             } else {
                                 $modals.modal('hide');
                                 location.href = '?order={{ order }}&page={{ page }}&search_text={{ search_text|urlencode or "" }}&message='+response['success'];
