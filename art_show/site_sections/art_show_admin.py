@@ -453,7 +453,7 @@ class Root:
         count = attendees.count()
         page = int(page) or 1
 
-        if not count:
+        if not count and search_text:
             message = 'No matches found'
 
         pages = range(1, int(math.ceil(count / 100)) + 1)
@@ -550,7 +550,7 @@ class Root:
         count = attendees.count()
         page = int(page) or 1
 
-        if not count:
+        if not count and search_text:
             message = 'No matches found'
 
         if not search_text:
