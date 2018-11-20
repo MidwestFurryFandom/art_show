@@ -79,7 +79,7 @@ class Root:
                 no_status = [int(params['no_status'])]
             except Exception:
                 no_status = list(params['no_status'])
-            filters.append(~ArtShowApplication.art_show_pieces.any(ArtShowPiece.status.in_(no_status)))
+            filters.append(ArtShowApplication.art_show_pieces.any(~ArtShowPiece.status.in_(no_status)))
 
         apps = session.query(ArtShowApplication).join(ArtShowApplication.art_show_pieces).filter(*filters).all()
 
@@ -88,6 +88,8 @@ class Root:
         return {
             'message': message,
             'apps': apps,
+            'yes_status': yes_status if 'yes_status' in params else None,
+            'no_status': no_status if 'no_status' in params else None,
         }
 
     def summary(self, session, message=''):
