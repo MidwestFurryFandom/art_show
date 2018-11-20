@@ -188,7 +188,7 @@ class Root:
 
             out.writerow([app.status_label,
                           paid,
-                          app.artist_name or app.attendee.full_name,
+                          app.artist_name,
                           app.attendee.full_name,
                           app.delivery_method_label,
                           app.panels,
