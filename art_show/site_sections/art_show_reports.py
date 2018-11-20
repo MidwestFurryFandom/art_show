@@ -140,7 +140,7 @@ class Root:
     @csv_file
     def banner_csv(self, out, session):
         out.writerow(['Banner Name', 'Locations'])
-        for app in session.query(ArtShowApplication).filter(ArtShowApplication.locations != ''):
+        for app in session.query(ArtShowApplication).filter(ArtShowApplication.status != c.DECLINED):
             out.writerow([app.display_name, app.locations])
 
     @csv_file
