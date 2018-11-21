@@ -16,12 +16,18 @@
           {{ check_in_form(app) }}
         </div>
         <div class="modal-footer">
-          <input type="hidden" class="action_or_no_action" name="{{ "check_out" if app.checked_in else "check_in" }}" />
-          <button type="submit" class="btn btn-primary save_app">Save</button>
+          {% set print_invoice = checkout and app.total_sales %}
+          <button type="submit" class="btn btn-primary save_app print{{ ' print_invoice' if print_invoice }}">
+            Save & Print Form{{ ' + Invoice' if print_invoice }}
+          </button>
           {% if not app.checked_in %}
+          <input type="hidden" class="complete" name="check_in" />
           <button type="submit" class="btn btn-success save_app action">Save & Check-In</button>
           {% elif not app.checked_out and checkout %}
-          <button type="submit" class="btn btn-success save_app action{{ ' print_invoice' if app.total_sales else '' }}">Save & Check-Out</button>
+          <input type="hidden" class="complete" name="check_out" />
+          <button type="submit" class="btn btn-success save_app action">Save & Check-Out</button>
+          {% else %}
+          <button type="submit" class="btn btn-success save_app action">Save</button>
           {% endif %}
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
         </div>

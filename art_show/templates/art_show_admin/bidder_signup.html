@@ -83,7 +83,8 @@
         {% endfor %}
       </td>
       {% if attendee.art_show_bidder and attendee.art_show_bidder.signed_up %}
-        <td><em>Signed-up {{ attendee.art_show_bidder.signed_up_local|datetime("%-I:%M%p")|lower }} {{ attendee.art_show_bidder.signed_up_local|datetime("%a") }}</em></td>
+        <td><em>Signed-up {{ attendee.art_show_bidder.signed_up_local|datetime("%-I:%M%p")|lower }} {{ attendee.art_show_bidder.signed_up_local|datetime("%a") }}
+          (<a href="#" class="open_modal" data-attendee-id="{{ attendee.id }}">View/Edit Bidder Info</a>)</em></td>
       {% else %}
       <td id="cin_{{ attendee.id }}">
         <button class="btn btn-primary open_modal" data-attendee-id="{{ attendee.id }}">{% if attendee.art_show_bidder %}Complete {% endif %}Sign Up</button>

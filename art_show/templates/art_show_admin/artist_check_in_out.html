@@ -14,15 +14,20 @@
     <h3 class="panel-title">Artist Check-{{ checkout|yesno("Out, In") }}</h3>
   </div>
   <div class="panel-body">
-    <div class="pull-left">
-      <a class="btn btn-default" href="form?new_app=True">Add an application</a>
-    </div>
-    <div class="pull-right form-inline">
-      <div class="form-group">
-        <div class="control-label">Status</div> <div class="input-group" id="status_filter"></div>
+    <form role="form" method="get" action="artist_check_in_out" id="search_form" class="form-inline">
+      <div class="form-group"><a class="btn btn-default" href="form?new_app=True">Add an application</a></div>
+      {% if checkout %}<input type="hidden" name="checkout" value="1" />{% endif %}
+      <div class="input-group col-sm-6">
+        <input class="focus form-control" id="search_bar" type="text" name="search_text" value="{{ search_text }}" />
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="submit">
+              <span class="glyphicon glyphicon-search"></span>
+          </button>
+        </span>
       </div>
-    </div>
-    <div class="clearfix"></div>
+    </form>
+    {% if search_text %}<a href="artist_check_in_out{{ '?checkout=True' if checkout }}">View all artists who have {{ 'checked in' if checkout else 'not checked out' }}</a>{% endif %}
+
     <iframe id="upload_frame" name="upload_frame" style="display:none"></iframe>
     <div id="app_modals">
       {% for app in applications -%}
@@ -38,9 +43,24 @@
       <input type="hidden" name="id" class="print_id" />
       {{ csrf_token() }}
     </form>
-    <table class="table table-striped datatable">
+    <ul class="pagination{% if not page %} pagination-lg{% elif pages|length > 100 %} pagination-sm{% endif %}">
+  {% for pagenum in pages %}
+  {% if pagenum == page %}
+  <li class="page-item active">
+    <a class="page-link" href="#">{{ pagenum }}</a>
+  </li>
+  {% else %}
+  <li class="page-item">
+    <a class="page-link"
+       href="artist_check_in_out?order={{ order }}&page={{ page }}&search_text={{ search_text|urlencode or '' }}{{ '&checkout=True' if checkout }}">
+      {{ pagenum }}</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+    <table class="table table-striped">
       <thead><tr>
-        <th>Name</th>
+        <th><a href="artist_check_in_out?order={{ order.first_name }}&page={{ page }}&search_text={{ search_text|urlencode or '' }}{{ '&checkout=True' if checkout }}">Name</a></th>
         <th>Pieces Submitted</th>
         <th>Status</th>
         <th>General Panels</th>
@@ -52,7 +72,7 @@
       </tr></thead>
       {% for app in applications %}
       <tr class="app-row" data-app_id="{{ app.id }}">
-        <td style="text-align:left" data-order="{{ app.attendee.full_name }}" data-search="{{ app.attendee.full_name }}"> <a href="form?id={{ app.id }}">{{ app.attendee.full_name|default("?????") }}{% if app.artist_name %} ({{ app.artist_name }}){% endif %}</a> </td>
+        <td><a href="form?id={{ app.id }}">{{ app.attendee.full_name|default("?????") }}{% if app.artist_name %} ({{ app.artist_name }}){% endif %}</a></td>
         <td>{% if app.incomplete_reason or app.is_unpaid %}N/A{% else %}
           {{ app.art_show_pieces|length }} (<a href="pieces?id={{ app.id }}">View</a>){% endif %}</td>
         <td>{{ app.status_label }}</td>
@@ -69,7 +89,7 @@
           {% else %}
           {% if app.checked_out %}<em>Checked-out {{ app.checked_out_local|datetime("%-I:%M%p")|lower }} {{ app.checked_out_local|datetime("%a") }}</em><br/>
           {% elif app.checked_in %}<em>Checked-in {{ app.checked_in_local|datetime("%-I:%M%p")|lower }} {{ app.checked_in_local|datetime("%a") }}</em><br/>{% endif %}
-          <button type="button" class="btn btn-primary open_modal">View Artist</button>
+          (<a href="#" class="open_modal">View/Edit Artist Info</a>)
           {% endif %}
         </td>
       </tr>
@@ -96,15 +116,12 @@
             var print_invoice = false;
             $('.open_modal').on('click', openModal);
             $('.save_app').on('click', function() {
+                print = $(this).hasClass('print');
+                print_invoice = $(this).hasClass('print_invoice');
                 if ($(this).hasClass('action')) {
-                    $('.action_or_no_action').val('1');
-                    print = true;
+                    $('.complete').val('1');
                 } else {
-                    $('.action_or_no_action').val('');
-                    print = false;
-                }
-                if ($(this).hasClass('print_invoice')) {
-                    print_invoice = true;
+                    $('.complete').val('');
                 }
             });
 
@@ -131,9 +148,10 @@
                                         window.open('', 'print_invoice_target', 'width=400,height=400,resizeable,scrollbars');
                                         $('#print_invoice').attr('target', 'print_invoice_target').submit();
                                     }
+                                } else {
+                                    $modals.modal('hide');
+                                    location.href = '?{% if checkout %}checkout=True&{% endif %}message=' + response['success'];
                                 }
-                                $modals.modal('hide');
-                                location.href = '?{% if checkout %}checkout=True&{% endif %}message='+response['success'];
                             } else {
                                 toastr.error('', response['error'], {timeOut: 5000});
                             }

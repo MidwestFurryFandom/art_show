@@ -201,19 +201,44 @@ class Root:
             raise HTTPRedirect('close_out?message={}',
                                'Close-out successful for piece {}'.format(piece.artist_and_piece_id))
 
-    def artist_check_in_out(self, session, checkout=False, message=''):
-        filters = []
+    def artist_check_in_out(self, session, checkout=False, message='', page=1, search_text='', order='first_name'):
+        filters = [ArtShowApplication.status != c.DECLINED]
         if checkout:
             filters.append(ArtShowApplication.checked_in != None)
         else:
             filters.append(ArtShowApplication.checked_out == None)
 
-        applications = session.query(ArtShowApplication).join(ArtShowApplication.attendee).filter(
-            ArtShowApplication.status == c.PAID).filter(*filters).all()
+        search_text = search_text.strip()
+        search_filters = []
+        if search_text:
+            for attr in ['first_name', 'last_name', 'legal_name',
+                         'full_name', 'last_first', 'badge_printed_name']:
+                search_filters.append(getattr(Attendee, attr).ilike('%' + search_text + '%'))
+
+            for attr in ['artist_name', 'banner_name']:
+                search_filters.append(getattr(ArtShowApplication, attr).ilike('%' + search_text + '%'))
+
+        applications = session.query(ArtShowApplication).join(ArtShowApplication.attendee)\
+            .filter(*filters).filter(or_(*search_filters))\
+            .order_by(Attendee.first_name.desc() if '-' in str(order) else Attendee.first_name)
+
+        count = applications.count()
+        page = int(page) or 1
+
+        if not count and search_text:
+            message = 'No matches found'
+
+        pages = range(1, int(math.ceil(count / 100)) + 1)
+        applications = applications[-100 + 100 * page: 100 * page]
 
         return {
             'message': message,
+            'page': page,
+            'pages': pages,
+            'search_text': search_text,
+            'search_results': bool(search_text),
             'applications': applications,
+            'order': Order(order),
             'checkout': checkout,
         }
 
@@ -453,7 +478,7 @@ class Root:
         count = attendees.count()
         page = int(page) or 1
 
-        if not count:
+        if not count and search_text:
             message = 'No matches found'
 
         pages = range(1, int(math.ceil(count / 100)) + 1)
@@ -550,7 +575,7 @@ class Root:
         count = attendees.count()
         page = int(page) or 1
 
-        if not count:
+        if not count and search_text:
             message = 'No matches found'
 
         if not search_text:
