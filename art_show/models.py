@@ -94,6 +94,7 @@ class ArtShowApplication(MagModel):
     city = Column(UnicodeText)
     region = Column(UnicodeText)
     country = Column(UnicodeText)
+    paypal_address = Column(UnicodeText)
     website = Column(UnicodeText)
     special_needs = Column(UnicodeText)
     status = Column(Choice(c.ART_SHOW_STATUS_OPTS), default=c.UNAPPROVED)
@@ -218,6 +219,26 @@ class ArtShowApplication(MagModel):
         else:
             return 0
 
+    @property
+    def total_sales(self):
+        cost = 0
+        for piece in self.art_show_pieces:
+            if piece.status in [c.SOLD, c.PAID]:
+                cost += piece.sale_price * 100
+        return cost
+
+    @property
+    def commission(self):
+        return self.total_sales * (c.COMMISSION_PCT / 10000)
+
+    @property
+    def check_total(self):
+        return round(self.total_sales - self.commission)
+
+    @property
+    def amount_paid(self):
+        return max(0, self.attendee.amount_paid - (self.attendee.total_cost - self.total_cost))
+
 
 class ArtShowPiece(MagModel):
     app_id = Column(UUID, ForeignKey('art_show_application.id', ondelete='SET NULL'), nullable=True)
@@ -242,6 +263,7 @@ class ArtShowPiece(MagModel):
     quick_sale_price = Column(Integer, default=0, nullable=True)
     winning_bid = Column(Integer, default=0, nullable=True)
     no_quick_sale = Column(Boolean, default=False)
+    voice_auctioned = Column(Boolean, default=False)
 
     status = Column(Choice(c.ART_PIECE_STATUS_OPTS), default=c.EXPECTED,
                     admin_only=True)
@@ -251,13 +273,18 @@ class ArtShowPiece(MagModel):
         if not self.piece_id:
             self.piece_id = int(self.app.highest_piece_id) + 1
 
+    @presave_adjustment
+    def set_voice_auctioned(self):
+        if self.status == c.VOICE_AUCTION:
+            self.voice_auctioned = True
+
     @property
     def artist_and_piece_id(self):
         return str(self.app.artist_id) + "-" + str(self.piece_id)
 
     @property
     def barcode_data(self):
-        return self.artist_and_piece_id
+        return "*" + self.artist_and_piece_id + "*"
 
     @property
     def valid_quick_sale(self):
@@ -270,6 +297,10 @@ class ArtShowPiece(MagModel):
     @property
     def sale_price(self):
         return self.winning_bid or self.quick_sale_price if self.valid_quick_sale else self.winning_bid
+
+    @property
+    def winning_bidder_num(self):
+        return self.receipt.attendee.art_show_bidder.bidder_num
 
 
 class ArtShowPayment(MagModel):
@@ -401,18 +432,6 @@ class ArtShowBidder(MagModel):
     hotel_room_num = Column(UnicodeText)
     admin_notes = Column(UnicodeText)
     signed_up = Column(UTCDateTime, nullable=True)
-
-    @presave_adjustment
-    def add_bidder_num(self):
-        if not self.bidder_num:
-            from uber.models import Session
-            with Session() as session:
-                latest_bidder = session.query(
-                    ArtShowBidder).order_by(ArtShowBidder.bidder_num_stripped.desc()).first()
-
-                next_num = str(min(latest_bidder.bidder_num_stripped + 1, 9999)).zfill(4) if latest_bidder else "0001"
-
-            self.bidder_num = self.attendee.last_name[:1].upper() + "-" + next_num
 
     @hybrid_property
     def bidder_num_stripped(self):

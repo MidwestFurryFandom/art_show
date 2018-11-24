@@ -5,6 +5,7 @@
     display: inline;
   }
 </style>
+<script type="text/javascript">{% include "region_opts.html" %}</script>
 
 {%- macro piece_modal(real_piece=None) -%}
 {% set piece = ArtShowPiece if not real_piece else real_piece %}
@@ -115,7 +116,7 @@
       <input type="hidden" name="return_to" value="{{ c.PAGE_PATH }}" />
       {{ csrf_token() }}
       {{ macros.form_group(app, 'banner_name', label="Banner Name", help="The name displayed with your art.", placeholder=app.artist_name or app.attendee.full_name, is_readonly=readonly) }}
-      {{ macros.form_group(app, 'check_payable', label="Name on Check", help="The name your check should be made payable to.", placeholder=app.attendee.legal_name or app.attendee.full_name, is_readonly=readonly) }}
+      {{ macros.form_group(app, 'check_payable', label="Name on Check", help="The name your check should be made payable to.", placeholder=app.attendee.legal_first_name ~ " " ~ app.attendee.legal_last_name, is_readonly=readonly) }}
       {{ macros.form_group(app, 'hotel_name', label="Hotel Staying At", is_readonly=readonly) }}
       {{ macros.form_group(app, 'hotel_room_num', label="Room Number", is_readonly=readonly) }}
 
@@ -201,9 +202,11 @@
           <select name="status" class="form-control">
             {{ options(c.ART_PIECE_STATUS_OPTS, piece.status) }}
           </select>
-            <button type="submit" class="btn btn-primary status_button">
-            <span class="glyphicon glyphicon-ok"></span>
-          </button>
+            <button type="submit" class="btn btn-primary status_button"><span class="glyphicon glyphicon-ok"></span></button>
+            <br/><label class="checkbox-label optional-field">
+              <input type="checkbox" name="voice_auctioned" value="1"{% if piece.voice_auctioned %} checked{% endif %} />
+              This piece went to voice auction.
+            </label>
           </form>
           {% else %}{{ piece.status_label }}{% endif %}</td>
         <td> {{ piece.name }} </td>

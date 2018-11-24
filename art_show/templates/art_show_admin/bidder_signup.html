@@ -83,7 +83,8 @@
         {% endfor %}
       </td>
       {% if attendee.art_show_bidder and attendee.art_show_bidder.signed_up %}
-        <td><em>Signed-up {{ attendee.art_show_bidder.signed_up_local|datetime("%-I:%M%p")|lower }} {{ attendee.art_show_bidder.signed_up_local|datetime("%a") }}</em></td>
+        <td><em>Signed-up {{ attendee.art_show_bidder.signed_up_local|datetime("%-I:%M%p")|lower }} {{ attendee.art_show_bidder.signed_up_local|datetime("%a") }}
+          (<a href="#" class="open_modal" data-attendee-id="{{ attendee.id }}">View/Edit Bidder Info</a>)</em></td>
       {% else %}
       <td id="cin_{{ attendee.id }}">
         <button class="btn btn-primary open_modal" data-attendee-id="{{ attendee.id }}">{% if attendee.art_show_bidder %}Complete {% endif %}Sign Up</button>
@@ -166,6 +167,7 @@
                                 $('#print_id').val(response['id']);
                                 $('#print_form').attr('target', 'print_form_target').submit();
                                 $('#attendee_'+response['attendee_id']).find('.bidder_num').text(response['bidder_num']);
+                                $('#attendee_'+response['attendee_id']).find('.bidder_id').val(response['bidder_id']);
                             } else {
                                 $modals.modal('hide');
                                 location.href = '?order={{ order }}&page={{ page }}&search_text={{ search_text|urlencode or "" }}&message='+response['success'];

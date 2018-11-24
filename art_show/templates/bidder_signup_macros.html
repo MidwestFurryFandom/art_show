@@ -37,7 +37,7 @@
   <span class="bidder_num">{{ attendee.art_show_bidder.bidder_num }}</span>
 </div>
 <div class="clearfix"><input type="hidden" name="attendee_id" value="{{ attendee.id }}" /></div>
-<input type="hidden" name="id" value="{{ attendee.art_show_bidder.id }}" />
+<input type="hidden" name="id" class="bidder_id" value="{{ attendee.art_show_bidder.id }}" />
 {{ macros.form_group(attendee, 'badge_printed_name', label="Badge Name", is_readonly=True) }}
 {{ macros.name_form_group(attendee, label="Full Name", is_readonly=True) }}
 {{ macros.form_group(attendee, 'legal_name', label="Legal Name", is_readonly=True) }}

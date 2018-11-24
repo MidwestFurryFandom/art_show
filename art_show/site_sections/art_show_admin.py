@@ -31,7 +31,15 @@ class Root:
         else:
             app = session.art_show_application(params)
         attendee = None
-        app_paid = max(0, app.attendee.amount_paid - (app.attendee.total_cost - app.total_cost))
+        app_paid = 0 if new_app else app.amount_paid
+
+        attendee_attrs = session.query(Attendee.id, Attendee.last_first, Attendee.badge_type, Attendee.badge_num) \
+            .filter(Attendee.first_name != '', Attendee.badge_status not in [c.INVALID_STATUS, c.WATCHED_STATUS])
+
+        attendees = [
+            (id, '{} - {}{}'.format(name.title(), c.BADGES[badge_type], ' #{}'.format(badge_num) if badge_num else ''))
+            for id, name, badge_type, badge_num in attendee_attrs]
+
         if cherrypy.request.method == 'POST':
             if new_app:
                 attendee, message = \
@@ -66,8 +74,8 @@ class Root:
             'attendee': attendee,
             'app_paid': app_paid,
             'attendee_id': app.attendee_id or params.get('attendee_id', ''),
-            'all_attendees': session.all_attendees(),
-            'new_app': new_app
+            'all_attendees': sorted(attendees, key=lambda tup: tup[1]),
+            'new_app': new_app,
         }
 
     def pieces(self, session, id, message=''):
@@ -94,26 +102,167 @@ class Root:
             'message': message,
         }
 
-    def artist_check_in_out(self, session, checkout=False, message=''):
-        filters = []
+    def close_out(self, session, message='', piece_code='', bidder_num='', **params):
+        found_piece, found_bidder, data_error = None, None, ''
+
+        if piece_code:
+            if len(piece_code.split('-')) != 2:
+                data_error = 'Please enter just one piece code.'
+            else:
+                artist_id, piece_id = piece_code.split('-')
+                try:
+                    piece_id = int(piece_id)
+                except Exception:
+                    data_error = 'Please use the format XXX-# for the piece code.'
+
+            if not data_error:
+                piece = session.query(ArtShowPiece).join(ArtShowPiece.app).filter(
+                    ArtShowApplication.artist_id.ilike('%{}%'.format(artist_id)),
+                    ArtShowPiece.piece_id == piece_id
+                )
+                if not piece.count():
+                    message = 'Could not find piece with code {}.'.format(piece_code)
+                elif piece.count() > 1:
+                    message = 'Multiple pieces matched the code you entered for some reason.'
+                else:
+                    found_piece = piece.one()
+
+                if bidder_num:
+                    bidder = session.query(ArtShowBidder).filter(ArtShowBidder.bidder_num.ilike(bidder_num))
+                    if not bidder.count():
+                        message = 'Could not find bidder with number {}.'.format(bidder_num)
+                    elif bidder.count() > 1:
+                        message = 'Multiple bidders matched the number you entered for some reason.'
+                    else:
+                        found_bidder = bidder.one().attendee
+            else:
+                message = data_error
+
+        return {
+            'message': message,
+            'piece_code': piece_code,
+            'bidder_num': bidder_num,
+            'piece': found_piece,
+            'bidder': found_bidder
+        }
+
+    def close_out_piece(self, session, message='', **params):
+        if 'id' not in params:
+            raise HTTPRedirect('close_out?piece_code={}&bidder_num={}&message={}',
+                               params['piece_code'], params['bidder_num'], 'Error: no piece ID submitted.')
+
+        piece = session.art_show_piece(params)
+        session.add(piece)
+
+        if piece.status == c.QUICK_SALE and not piece.valid_quick_sale:
+            message = 'This piece does not have a valid quick-sale price.'
+        elif piece.status == c.RETURN and piece.valid_quick_sale:
+            message = 'This piece has a quick-sale price and so cannot yet be marked as Return to Artist.'
+        elif (piece.winning_bid or piece.status == c.SOLD) and not piece.valid_for_sale:
+            message = 'This piece is not for sale!'
+        elif 'bidder_id' not in params:
+            if piece.status == c.SOLD:
+                message = 'You cannot mark a piece as Sold without a bidder. Please add a bidder number in step 1.'
+            elif piece.winning_bid:
+                message = 'You cannot enter a winning bid without a bidder. Please add a bidder number in step 1.'
+        elif piece.status != c.SOLD:
+            if 'bidder_id' in params:
+                message = 'You cannot assign a piece to a bidder\'s receipt without marking it as Sold.'
+            if piece.winning_bid:
+                message = 'You cannot enter a winning bid for a piece without also marking it as Sold.'
+        elif piece.status == c.SOLD and not piece.winning_bid:
+            message = 'Please enter the winning bid for this piece.'
+        elif piece.status == c.SOLD and piece.winning_bid < piece.opening_bid:
+            message = 'The winning bid (${}) cannot be less than the minimum bid (${}).'\
+                .format(piece.winning_bid, piece.opening_bid)
+
+        if piece.status == c.PAID:
+            message = 'Please process sales via the sales page.'
+
+        if 'bidder_id' in params:
+            attendee = session.attendee(params['bidder_id'])
+            if not attendee:
+                message = 'Attendee not found for some reason.'
+            elif not attendee.art_show_receipt:
+                receipt = ArtShowReceipt(attendee=attendee)
+                session.add(receipt)
+                session.commit()
+            else:
+                receipt = attendee.art_show_receipt
+
+            if not message:
+                piece.receipt = receipt
+
+        if message:
+            session.rollback()
+            raise HTTPRedirect('close_out?piece_code={}&bidder_num={}&message={}',
+                               params['piece_code'], params['bidder_num'], message)
+        else:
+            raise HTTPRedirect('close_out?message={}',
+                               'Close-out successful for piece {}'.format(piece.artist_and_piece_id))
+
+    def artist_check_in_out(self, session, checkout=False, message='', page=1, search_text='', order='first_name'):
+        filters = [ArtShowApplication.status != c.DECLINED]
         if checkout:
             filters.append(ArtShowApplication.checked_in != None)
         else:
             filters.append(ArtShowApplication.checked_out == None)
 
-        applications = session.query(ArtShowApplication).join(ArtShowApplication.attendee).filter(
-            ArtShowApplication.status == c.PAID).filter(*filters).all()
+        search_text = search_text.strip()
+        search_filters = []
+        if search_text:
+            for attr in ['first_name', 'last_name', 'legal_name',
+                         'full_name', 'last_first', 'badge_printed_name']:
+                search_filters.append(getattr(Attendee, attr).ilike('%' + search_text + '%'))
+
+            for attr in ['artist_name', 'banner_name']:
+                search_filters.append(getattr(ArtShowApplication, attr).ilike('%' + search_text + '%'))
+
+        applications = session.query(ArtShowApplication).join(ArtShowApplication.attendee)\
+            .filter(*filters).filter(or_(*search_filters))\
+            .order_by(Attendee.first_name.desc() if '-' in str(order) else Attendee.first_name)
+
+        count = applications.count()
+        page = int(page) or 1
+
+        if not count and search_text:
+            message = 'No matches found'
+
+        pages = range(1, int(math.ceil(count / 100)) + 1)
+        applications = applications[-100 + 100 * page: 100 * page]
 
         return {
             'message': message,
+            'page': page,
+            'pages': pages,
+            'search_text': search_text,
+            'search_results': bool(search_text),
             'applications': applications,
+            'order': Order(order),
             'checkout': checkout,
+        }
+
+    def print_check_in_out_form(self, session, id, checkout='', **params):
+        app = session.art_show_application(id)
+
+        return {
+            'model': app,
+            'type': 'artist',
+            'checkout': checkout,
+        }
+
+    def print_artist_invoice(self, session, id, **params):
+        app = session.art_show_application(id)
+
+        return {
+            'app': app,
         }
 
     @ajax
     def save_and_check_in_out(self, session, **params):
         app = session.art_show_application(params['app_id'])
         attendee = app.attendee
+        success = 'Application updated'
 
         app.apply(params, restricted=False)
 
@@ -124,27 +273,30 @@ class Root:
         else:
             if 'check_in' in params and params['check_in']:
                 app.checked_in = localized_now()
+                success = 'Artist successfully checked-in'
             if 'check_out' in params and params['check_out']:
                 app.checked_out = localized_now()
+                success = 'Artist successfully checked-out'
             session.commit()
 
-        attendee_params = dict(params)
-        for field_name in ['country', 'region', 'zip_code', 'address1', 'address2', 'city']:
-            attendee_params[field_name] = params.get('attendee_{}'.format(field_name), '')
+        if 'check_in' in params:
+            attendee_params = dict(params)
+            for field_name in ['country', 'region', 'zip_code', 'address1', 'address2', 'city']:
+                attendee_params[field_name] = params.get('attendee_{}'.format(field_name), '')
 
-        attendee.apply(attendee_params, restricted=False)
+            attendee.apply(attendee_params, restricted=False)
 
-        if c.COLLECT_FULL_ADDRESS and attendee.country == 'United States':
-            attendee.international = False
-        elif c.COLLECT_FULL_ADDRESS:
-            attendee.international = True
+            if c.COLLECT_FULL_ADDRESS and attendee.country == 'United States':
+                attendee.international = False
+            elif c.COLLECT_FULL_ADDRESS:
+                attendee.international = True
 
-        message = check(attendee)
-        if message:
-            session.rollback()
-            return {'error': message}
-        else:
-            session.commit()
+            message = check(attendee)
+            if message:
+                session.rollback()
+                return {'error': message}
+            else:
+                session.commit()
 
         piece_ids = params.get('piece_ids' + app.id)
 
@@ -183,10 +335,15 @@ class Root:
                 else:
                     if 'check_in' in params and params['check_in'] and piece.status == c.EXPECTED:
                         piece.status = c.HUNG
+                    elif 'check_out' in params and params['check_out'] and piece.status == c.HUNG:
+                        piece.status = c.RETURN
                     session.commit()  # We save as we go so it's less annoying if there's an error
 
-        return {'error': message,
-                'success': 'Application updated'}
+        return {
+            'id': app.id,
+            'error': message,
+            'success': success,
+        }
 
     @unrestricted
     def bid_sheet_barcode_generator(self, data):
@@ -252,7 +409,7 @@ class Root:
             pdf.cell(132, 22, txt=piece.barcode_data, ln=1, align="C")
             pdf.set_font("Arial", size=8, style='B')
             pdf.set_xy(163 + xplus, 32 + yplus)
-            pdf.cell(132, 12, txt=piece.barcode_data, ln=1, align="C")
+            pdf.cell(132, 12, txt=piece.artist_and_piece_id, ln=1, align="C")
 
             # Artist, Title, Media
             pdf.set_font("Arial", size=12)
@@ -281,8 +438,13 @@ class Root:
             pdf.cell(
                 53, 14, txt=('${:,.2f}'.format(piece.quick_sale_price)) if piece.valid_quick_sale else 'N/A', ln=1)
 
+        import unicodedata
+        filename = str(unicodedata.normalize('NFKD', piece.app.display_name).encode('ascii', 'ignore'))
+        filename = re.sub('[^\w\s-]', '', filename[1:]).strip().lower()
+        filename = re.sub('[-\s]+', '-', filename)
+        filename = filename + "_" + localized_now().strftime("%m%d%Y_%H%M")
 
-        cherrypy.response.headers['Content-Disposition'] = 'attachment; filename=bidsheets.pdf'
+        cherrypy.response.headers['Content-Disposition'] = 'attachment; filename={}.pdf'.format(filename)
         return pdf.output(dest='S').encode('latin-1')
 
     def bidder_signup(self, session, message='', page=1, search_text='', order=''):
@@ -316,7 +478,7 @@ class Root:
         count = attendees.count()
         page = int(page) or 1
 
-        if not count:
+        if not count and search_text:
             message = 'No matches found'
 
         pages = range(1, int(math.ceil(count / 100)) + 1)
@@ -344,6 +506,12 @@ class Root:
                 attendee.cellphone = params.pop('cellphone')
             bidder = ArtShowBidder()
             bidder.apply(params, restricted=False)
+            latest_bidder = session.query(ArtShowBidder).filter(ArtShowBidder.id != bidder.id) \
+                .order_by(ArtShowBidder.bidder_num_stripped.desc()).first()
+
+            next_num = str(min(latest_bidder.bidder_num_stripped + 1, 9999)).zfill(4) if latest_bidder else "0001"
+
+            bidder.bidder_num = attendee.last_name[:1].upper() + "-" + next_num
             attendee.art_show_bidder = bidder
 
         if params['complete']:
@@ -363,6 +531,7 @@ class Root:
             'id': bidder.id,
             'attendee_id': attendee.id,
             'bidder_num': bidder.bidder_num,
+            'bidder_id': bidder.id,
             'error': message,
             'success': success
         }
@@ -406,7 +575,7 @@ class Root:
         count = attendees.count()
         page = int(page) or 1
 
-        if not count:
+        if not count and search_text:
             message = 'No matches found'
 
         if not search_text:

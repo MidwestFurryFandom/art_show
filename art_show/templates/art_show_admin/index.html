@@ -18,9 +18,6 @@
       <div class="form-group">
         <div class="control-label">Status</div> <div class="input-group" id="status_filter"></div>
       </div>
-      <div class="form-group">
-        <div class="control-label">Paid</div> <span id="paid_filter"></span>
-      </div>
     </div>
   </div>
 <table class="table table-striped datatable">
@@ -34,7 +31,6 @@
     <th>Mature Panels</th>
     <th>Mature Tables</th>
     <th>Art Show Cost</th>
-    <th>Paid</th>
     <th>Admin Notes</th>
 </tr></thead>
 {% for app in applications %}
@@ -51,8 +47,6 @@
         <td>{{ app.panels_ad }}</td>
         <td>{{ app.tables_ad }}</td>
         <td>${{ app.potential_cost }}</td>
-        <td>{% if app.status == c.APPROVED %}No{% elif app.status == c.PAID %}Yes
-            {% else %}N/A ({{ app.incomplete_reason }}){% endif %}</td>
         <td>{{ app.admin_notes }}</td>
     </tr>
 {% endfor %}
