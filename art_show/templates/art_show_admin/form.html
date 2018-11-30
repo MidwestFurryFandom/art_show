@@ -27,7 +27,7 @@ app, c.PAGE_PATH,
 
       {{ csrf_token() }}
 
-      {% if new_app %}
+      {% if new_app or c.HAS_ART_SHOW_ADMIN_ACCESS %}
       <div class="form-group">
         <label for="attendee" class="col-sm-3 control-label">Attendee</label>
         <div class="col-sm-6">
