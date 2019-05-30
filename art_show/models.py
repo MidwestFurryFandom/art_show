@@ -6,8 +6,7 @@ from datetime import datetime
 from pytz import UTC
 
 from uber.config import c
-from uber.models import Session
-from uber.models import MagModel
+from uber.models import MagModel, PromoCode, Session
 from uber.decorators import cost_property, presave_adjustment, render
 from uber.models.types import Choice, DefaultColumn as Column,\
     default_relationship as relationship
@@ -61,6 +60,44 @@ class SessionMixin:
 
     def lookup_agent_code(self, code):
         return self.query(ArtShowApplication).filter_by(agent_code=code).all()
+
+
+@Session.model_mixin
+class PromoCode:
+    @property
+    def discount_str(self):
+        if self.discount_type == self._FIXED_DISCOUNT and self.discount == 0:
+            return 'No discount'
+        elif not self.discount:
+            return 'Free badge'
+
+        if self.discount_type == self._FIXED_DISCOUNT:
+            return '${} discount'.format(self.discount)
+        elif self.discount_type == self._FIXED_PRICE:
+            return '${} badge'.format(self.discount)
+        else:
+            return '%{} discount'.format(self.discount)
+
+    @presave_adjustment
+    def _attribute_adjustments(self):
+        # If 'uses_allowed' is empty, then this is an unlimited use code
+        if not self.uses_allowed:
+            self.uses_allowed = None
+
+        # If 'discount' is empty, then this is a full discount, free badge
+        if self.discount == '':
+            self.discount = None
+
+        self.code = self.code.strip() if self.code else ''
+        if not self.code:
+            # If 'code' is empty, then generate a random code
+            self.code = self.generate_random_code()
+        else:
+            # Replace multiple whitespace characters with a single space
+            self.code = re.sub(r'\s+', ' ', self.code)
+
+        # Always make expiration_date 11:59pm of the given date
+        self.expiration_date = self.normalize_expiration_date(self.expiration_date)
 
 
 class ArtShowApplication(MagModel):
