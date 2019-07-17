@@ -32,6 +32,12 @@ def min_tables(app):
 
 
 @validation.ArtShowApplication
+def us_only(app):
+    if app.delivery_method == c.BY_MAIL and not app.us_only:
+        return 'Please confirm your address is within the continental US if you are mailing your art in.'
+
+
+@validation.ArtShowApplication
 def cant_ghost_art_show(app):
     if app.attendee and app.delivery_method == c.BRINGING_IN \
             and app.attendee.badge_status == c.NOT_ATTENDING:

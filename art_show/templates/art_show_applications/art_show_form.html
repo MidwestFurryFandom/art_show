@@ -20,6 +20,20 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
     </select>
     {% endif %}
   </div>
+  {% if c.BY_MAIL_US_ONLY %}
+  <div id="us_only_checkbox" class="col-sm-9 col-sm-offset-3">
+    {{ macros.checkbox(app, 'us_only', label='I verify that my mailing address will be in the continental US.') }}
+  </div>
+  <script type="text/javascript">
+      var showOrHideUSOnly = function() {
+          setVisible($('#us_only_checkbox'), $.field('delivery_method').val() == '{{ c.BY_MAIL }}');
+      };
+      $(function() {
+          showOrHideUSOnly();
+          $.field('delivery_method').on('change', showOrHideUSOnly);
+      });
+  </script>
+  {% endif %}
   {% if not readonly and not admin_area %}
   <div class="clearfix"></div>
   <p class="help-block col-sm-6 col-sm-offset-3">Mailing your art to the show incurs a fee of ${{ c.ART_MAILING_FEE }}.</p>
@@ -51,7 +65,7 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
   <label for="panels" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">General Panels</label>
   <div class="col-sm-6">
     {% if app.panels and app.panels > max_panels and not admin_area %}
-      <div class="form-control-static">An admin has granted you {{ app.panels }} general panels. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      <div class="form-control-static">An admin has granted you {{ app.panels }} general panels. Please contact us via via {{ c.ART_SHOW_EMAIL|email_only|email_to_link }}
       if you wish to change the number of panels on your application.</div>
     {% elif readonly %}
       <div class="form-control-static">{{ app.panels }}</div>
@@ -61,19 +75,13 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
       </select>(${{ c.COST_PER_PANEL }} per panel)
     {% endif %}
     </div>
-    {% if not readonly and not admin_area and app.panels < max_panels %}
-    <div class="clearfix"></div>
-    <p class="help-block col-sm-6 col-sm-offset-3">
-      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-        than {{ c.MAX_ART_PANELS }} panels.</i></p>
-    {% endif %}
 </div>
 
 <div class="form-group">
   <label for="tables" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">General Table Sections</label>
   <div class="col-sm-6">
     {% if app.tables and app.tables > max_tables and not admin_area %}
-      <div class="form-control-static">An admin has granted you {{ app.tables }} general table sections. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      <div class="form-control-static">An admin has granted you {{ app.tables }} general table sections. Please contact us via via {{ c.ART_SHOW_EMAIL|email_only|email_to_link }}
       if you wish to change the number of table sections on your application.</div>
     {% elif readonly %}
       <div class="form-control-static">{{ app.tables }}</div>
@@ -83,19 +91,13 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
       </select>(${{ c.COST_PER_TABLE }} per table section)
     {% endif %}
     </div>
-    {% if not readonly and not admin_area and app.tables < max_tables %}
-    <div class="clearfix"></div>
-    <p class="help-block col-sm-6 col-sm-offset-3">
-      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-        than {{ c.MAX_ART_TABLES }} table sections.</i></p>
-    {% endif %}
 </div>
 
 <div class="form-group">
   <label for="panels" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">Mature Panels</label>
   <div class="col-sm-6">
     {% if app.panels_ad and app.panels_ad > max_panels and not admin_area %}
-      <div class="form-control-static">An admin has granted you {{ app.panels_ad }} mature panels. Please contact us via via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      <div class="form-control-static">An admin has granted you {{ app.panels_ad }} mature panels. Please contact us via via {{ c.ART_SHOW_EMAIL|email_only|email_to_link }}
       if you wish to change the number of panels on your application.</div>
     {% elif readonly %}
       <div class="form-control-static">{{ app.panels_ad }}</div>
@@ -105,19 +107,13 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
       </select>{% if not no_help_text %}(${{ c.COST_PER_PANEL }} per panel){% endif %}
       {% endif %}
     </div>
-    {% if not readonly and not admin_area and app.panels_ad < max_panels %}
-    <div class="clearfix"></div>
-    <p class="help-block col-sm-6 col-sm-offset-3">
-      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-        than {{ c.MAX_ART_PANELS }} panels.</i></p>
-    {% endif %}
 </div>
 
 <div class="form-group">
   <label for="tables" class="col-sm-3 control-label{% if readonly %} optional-field{% endif %}">Mature Table Sections</label>
   <div class="col-sm-6">
     {% if app.tables_ad and app.tables_ad > max_tables and not admin_area %}
-      <div class="form-control-static">An admin has granted you {{ app.tables_ad }} mature table sections. Please contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a>
+      <div class="form-control-static">An admin has granted you {{ app.tables_ad }} mature table sections. Please contact us via {{ c.ART_SHOW_EMAIL|email_only|email_to_link }}
       if you wish to change the number of table sections on your application.</div>
     {% elif readonly %}
       <div class="form-control-static">{{ app.tables_ad }}</div>
@@ -127,14 +123,15 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
       </select>{% if not no_help_text %}(${{ c.COST_PER_TABLE }} per table section){% endif %}
     {% endif %}
     </div>
-    {% if not readonly and not admin_area and app.tables_ad < max_tables %}
-    <div class="clearfix"></div>
-    <p class="help-block col-sm-6 col-sm-offset-3">
-      <i>You may contact us via <a href='mailto:{{ c.ART_SHOW_EMAIL }}'>{{ c.ART_SHOW_EMAIL }}</a> to request more
-        than {{ c.MAX_ART_TABLES }} table sections.</i></p>
-    {% endif %}
 </div>
 
+{% if not readonly and not admin_area and (app.panels < max_panels or app.tables < max_tables or app.tables_ad < max_tables or app.panels_ad < max_panels) %}
+<div class="help-block text-center">
+  You may contact us via {{ c.ART_SHOW_EMAIL|email_only|email_to_link }} to request more
+  than {{ c.MAX_ART_PANELS }} panels or{% if c.MAX_ART_PANELS != c.MAX_ART_TABLES %} {{ c.MAX_ART_TABLES }}{% endif %} table sections.<br/><br/>
+</div>
+{% endif %}
+
 {{ macros.form_group(app, 'description', type="textarea", label="Description", help="A short description of your artwork." if not admin_area else "", is_readonly=readonly, is_required=True) }}
-{{ macros.form_group(app, 'website', label="Website URL", is_readonly=readonly, is_required=True) }}
+{{ macros.form_group(app, 'website', label="Website URL", is_readonly=readonly, is_required=True, help="If you do not have a website showing your work, please enter 'N/A' and contact " + c.ART_SHOW_EMAIL|email_only|email_to_link + " after submitting your application.") }}
 {{ macros.form_group(app, 'special_needs', type="textarea", label="Special Requests", help="We cannot guarantee that we will accommodate all requests." if not admin_area else "", is_readonly=readonly) }}

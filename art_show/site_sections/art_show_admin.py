@@ -27,9 +27,9 @@ class Root:
 
     def form(self, session, new_app='', message='', **params):
         if new_app and 'attendee_id' in params:
-            app = session.art_show_application(params, ignore_csrf=True)
+            app = session.art_show_application(params, ignore_csrf=True, bools=['us_only'])
         else:
-            app = session.art_show_application(params)
+            app = session.art_show_application(params, bools=['us_only'])
         attendee = None
         app_paid = 0 if new_app else app.amount_paid
 
@@ -43,7 +43,7 @@ class Root:
         if cherrypy.request.method == 'POST':
             if new_app:
                 attendee, message = \
-                    session.attendee_from_art_show_app(**params)
+                    session.attendee_from_art_show_app( **params)
             else:
                 attendee = app.attendee
             message = message or check(app)
