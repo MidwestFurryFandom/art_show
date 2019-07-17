@@ -136,6 +136,7 @@ class ArtShowApplication(MagModel):
     special_needs = Column(UnicodeText)
     status = Column(Choice(c.ART_SHOW_STATUS_OPTS), default=c.UNAPPROVED)
     delivery_method = Column(Choice(c.ART_SHOW_DELIVERY_OPTS), default=c.BRINGING_IN)
+    us_only = Column(Boolean, default=False)
     admin_notes = Column(UnicodeText, admin_only=True)
     base_price = Column(Integer, default=0, admin_only=True)
     overridden_price = Column(Integer, nullable=True, admin_only=True)

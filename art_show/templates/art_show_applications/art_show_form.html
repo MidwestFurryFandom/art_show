@@ -20,6 +20,20 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
     </select>
     {% endif %}
   </div>
+  {% if c.BY_MAIL_US_ONLY %}
+  <div id="us_only_checkbox" class="col-sm-9 col-sm-offset-3">
+    {{ macros.checkbox(app, 'us_only', label='I verify that my mailing address will be in the continental US.') }}
+  </div>
+  <script type="text/javascript">
+      var showOrHideUSOnly = function() {
+          setVisible($('#us_only_checkbox'), $.field('delivery_method').val() == '{{ c.BY_MAIL }}');
+      };
+      $(function() {
+          showOrHideUSOnly();
+          $.field('delivery_method').on('change', showOrHideUSOnly);
+      });
+  </script>
+  {% endif %}
   {% if not readonly and not admin_area %}
   <div class="clearfix"></div>
   <p class="help-block col-sm-6 col-sm-offset-3">Mailing your art to the show incurs a fee of ${{ c.ART_MAILING_FEE }}.</p>
