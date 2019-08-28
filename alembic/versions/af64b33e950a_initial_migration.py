@@ -1,7 +1,7 @@
 """Initial migration
 
-Revision ID: af64b33e950a
-Revises: 735063d71b57
+Revision ID: b55cbf903320
+Revises: 1ed43776064f
 Create Date: 2018-05-08 23:18:35.150928
 
 """
