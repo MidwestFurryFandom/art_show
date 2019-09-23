@@ -250,6 +250,14 @@ class ArtShowApplication(MagModel):
         return self.status == c.APPROVED
 
     @property
+    def has_general_space(self):
+        return self.panels or self.tables
+
+    @property
+    def has_mature_space(self):
+        return self.panels_ad or self.tables_ad
+
+    @property
     def highest_piece_id(self):
         if len(self.art_show_pieces) > 1:
             return sorted([piece for piece in self.art_show_pieces if piece.piece_id], key=lambda piece: piece.piece_id, reverse=True)[0].piece_id
