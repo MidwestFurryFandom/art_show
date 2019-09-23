@@ -9,7 +9,7 @@ ArtShowApplication.required = [('description', 'Description'),('website','Websit
 
 @prereg_validation.ArtShowApplication
 def max_panels(app):
-    if app.panels > c.MAX_ART_PANELS:
+    if app.panels > c.MAX_ART_PANELS and app.panels != app.orig_value_of('panels'):
         return 'You cannot have more than {} panels.'.format(c.MAX_ART_PANELS)
 
 
@@ -21,7 +21,7 @@ def min_panels(app):
 
 @prereg_validation.ArtShowApplication
 def max_tables(app):
-    if app.tables > c.MAX_ART_TABLES:
+    if app.tables > c.MAX_ART_TABLES and app.tables != app.orig_value_of('tables'):
         return 'You cannot have more than {} tables.'.format(c.MAX_ART_TABLES)
 
 
@@ -92,8 +92,8 @@ ArtShowPiece.required = [('name', 'Name'),
 @validation.ArtShowPiece
 def no_duplicate_piece_names(piece):
     with Session() as session:
-        if session.query(ArtShowPiece).iexact(name=piece.name).filter(ArtShowPiece.id != piece.id).all():
-            return "There's already a piece with that name."
+        if session.query(ArtShowPiece).iexact(name=piece.name).filter(ArtShowPiece.id != piece.id).filter_by(app_id=piece.app_id).all():
+            return "You already have a piece with that name."
 
 
 @validation.ArtShowPiece
