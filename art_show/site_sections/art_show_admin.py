@@ -730,6 +730,15 @@ class Root:
 
         raise HTTPRedirect('pieces_bought?id={}&message={}', receipt.attendee.id, message)
 
+    def undo_payment(self, session, id, **params):
+        payment = session.art_show_payment(id)
+
+        payment_or_refund = "Refund" if payment.amount < 0 else "Payment"
+
+        session.delete(payment)
+
+        raise HTTPRedirect('pieces_bought?id={}&message={}', payment.receipt.attendee.id, payment_or_refund + "deleted")
+
     def print_receipt(self, session, id, **params):
         receipt = session.art_show_receipt(id)
 
