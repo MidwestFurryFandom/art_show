@@ -22,7 +22,7 @@ placeholder=app.attendee.full_name, is_readonly=readonly) }}
   </div>
   {% if c.BY_MAIL_US_ONLY %}
   <div id="us_only_checkbox" class="col-sm-9 col-sm-offset-3">
-    {{ macros.checkbox(app, 'us_only', label='I verify that my mailing address will be in the continental US.') }}
+    {{ macros.checkbox(app, 'us_only', label='I verify that my mailing address will be in the continental US.', is_readonly=readonly) }}
   </div>
   <script type="text/javascript">
       var showOrHideUSOnly = function() {
