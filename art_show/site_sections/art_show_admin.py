@@ -345,6 +345,19 @@ class Root:
             'success': success,
         }
 
+    def assign_locations(self, session, message='', **params):
+        valid_apps = session.query(ArtShowApplication).filter_by(status=c.PAID)
+        for app in valid_apps:
+            field_name = '{}_locations'.format(app.id)
+            if field_name in params:
+                app.locations = params.get(field_name)
+                session.add(app)
+
+        return {
+            'apps': valid_apps,
+            'message': message,
+        }
+
     @unrestricted
     def bid_sheet_barcode_generator(self, data):
         bid_sheet_barcode = treepoem.generate_barcode(
