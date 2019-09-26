@@ -5,13 +5,16 @@
   {% if not no_print %}
   <script type="text/javascript">
     window.self.onload = function() {
-        window.self.print();
-        window.self.close();
+      setTimeout(function () {
+        window.focus();
+        window.print();
+          window.close();
+      }, 250);
     };
   </script>
   {% endif %}
   <script type="text/javascript">{% include "region_opts.html" %}</script>
-  <link rel="stylesheet" href="{{ c.URL_BASE }}/static/deps/combined.min.css" />
+  <link rel="stylesheet" href="{{ c.URL_BASE }}/static/styles/bootstrap.min.css" />
   <style>
   @media print {
     .panel-body, .pull-left .pull-right { margin: 0 !important; padding: 0 !important; }

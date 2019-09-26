@@ -154,7 +154,11 @@
         </form>
       </div>
       {% endif %}
-      <button class="btn btn-success" onClick="printCheckInForm()">Print Check-In Form</button>
+      <form role="form" target="_blank" method="post" id="print_form" action="print_check_in_out_form">
+      <input type="hidden" name="id" value="{{ app.id }}" />
+      <button class="btn btn-success">Print Check-In Form</button>
+      {{ csrf_token() }}
+      </form>
     </div>
     {% if admin_area %}
     <div class="row text-center">
@@ -251,11 +255,6 @@
       {% endfor %}
       </tbody>
     </table>
-  </div>
-</div>
-<div id="print_form" style="display: none;">
-  <div class="form-horizontal">
-    {{ artist_checkin_macros.check_in_form(app, True) }}
   </div>
 </div>
 
