@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from uber.automated_emails import AutomatedEmailFixture
 from .models import ArtShowApplication
 from uber.config import c
 from sqlalchemy.orm import subqueryload
-from uber.utils import days_before
+from uber.utils import after, days_before
 
 
 AutomatedEmailFixture.queries.update({
@@ -58,3 +60,10 @@ ArtShowAppEmailFixture(
     lambda a: a.status == c.PAID and not a.art_show_pieces,
     when=days_before(15, c.EPOCH),
     ident='art_show_pieces_reminder')
+
+ArtShowAppEmailFixture(
+    'Reminder to assign an agent for your {EVENT_NAME} Art Show application',
+    'art_show/agent_reminder.html',
+    lambda a: a.status == c.PAID and not a.agent,
+    when=after(c.EVENT_TIMEZONE.localize(datetime(int(c.EVENT_YEAR), 11, 1))),
+    ident='art_show_agent_reminder')
