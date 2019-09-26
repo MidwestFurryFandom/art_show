@@ -36,7 +36,7 @@
   </li>
   {% else %}
   <li class="page-item">
-    <a class="page-link" href="sales_search?order={{ order }}&page={{ page }}&search_text={{ search_text|urlencode or '' }}">{{ pagenum }}</a>
+    <a class="page-link" href="sales_search?order={{ order }}&page={{ pagenum }}&search_text={{ search_text|urlencode or '' }}">{{ pagenum }}</a>
     {% endif %}
   </li>
   {% endfor %}
