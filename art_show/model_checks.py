@@ -152,6 +152,14 @@ def name_max_length(piece):
 
 
 @validation.ArtShowPiece
+def check_in_gallery(piece):
+    if piece.gallery == c.GENERAL and not piece.app.has_general_space:
+        return "You cannot put a piece in the General gallery because you do not have any space there."
+    if piece.gallery == c.MATURE and not piece.app.has_mature_space:
+        return "You cannot put a piece in the Mature gallery because you do not have any space there."
+
+
+@validation.ArtShowPiece
 def media_max_length(piece):
     if len(piece.media) > 15:
         return "The description of the piece's media must be 15 characters or fewer."
