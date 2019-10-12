@@ -101,9 +101,9 @@ class Root:
         app = session.art_show_application(app_id)
 
         if cherrypy.request.method == 'POST':
+            piece.app = app
             message = check(piece)
             if not message:
-                piece.app = app
                 session.add(piece)
                 if not restricted and 'voice_auctioned' not in params:
                     piece.voice_auctioned = False
