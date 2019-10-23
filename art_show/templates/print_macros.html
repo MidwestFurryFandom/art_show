@@ -22,7 +22,7 @@
   {% for piece in receipt.pieces %}
   <tr>
     <td> {{ piece.artist_and_piece_id }} </td>
-    <td> {{ piece.name }} </td>
+    <td> {{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }} </td>
     <td> {{ piece.type_label }}
       {% if piece.print_run_num and piece.type == c.PRINT %}({{ piece.print_run_num }} of {{ piece.print_run_total }}){% endif %}
     </td>
@@ -75,7 +75,7 @@
   {% if piece.status in [c.SOLD, c.PAID] %}
   <tr>
     <td> {{ piece.artist_and_piece_id }} </td>
-    <td> {{ piece.name }} </td>
+    <td> {{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }} </td>
     <td> {% if piece.voice_auctioned %}Auction{% elif piece.winning_bid %}Bid Sheet{% elif piece.valid_quick_sale %}QuickSale{% endif %} </td>
     <td> ${{ piece.opening_bid }} </td>
     <td> ${{ '%0.2f' % piece.sale_price }} </td>

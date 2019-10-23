@@ -213,7 +213,7 @@
             </label>
           </form>
           {% else %}{{ piece.status_label }}{% endif %}</td>
-        <td> {{ piece.name }} </td>
+        <td> {{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }} </td>
         <td> {{ piece.media }} </td>
         <td> {{ piece.gallery_label }} </td>
         <td> {{ piece.type_label }}

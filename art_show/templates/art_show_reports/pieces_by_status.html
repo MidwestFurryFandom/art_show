@@ -38,7 +38,7 @@
   {% if (not yes_status or piece.status|string in yes_status|join(',')) and (not no_status or piece.status|string not in no_status|join(',')) %}
   <tr>
     <td>{{ piece.artist_and_piece_id }}</td>
-    <td>{{ piece.name }}</td>
+    <td>{{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }}</td>
     <td>{{ piece.status_label }}</td>
     <td>{{ piece.gallery_label }}</td>
   </tr>
