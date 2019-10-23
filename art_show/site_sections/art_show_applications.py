@@ -101,7 +101,7 @@ class Root:
         app = session.art_show_application(app_id)
 
         if cherrypy.request.method == 'POST':
-            piece.app = app
+            piece.app_id = app.id
             message = check(piece)
             if not message:
                 session.add(piece)

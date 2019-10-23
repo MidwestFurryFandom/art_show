@@ -242,6 +242,7 @@ class Root:
             'checkout': checkout,
         }
 
+    @unrestricted
     def print_check_in_out_form(self, session, id, checkout='', **params):
         app = session.art_show_application(id)
 

@@ -154,7 +154,7 @@
         </form>
       </div>
       {% endif %}
-      <form role="form" target="_blank" method="post" id="print_form" action="print_check_in_out_form">
+      <form role="form" target="_blank" method="post" id="print_form" action="../art_show_admin/print_check_in_out_form">
       <input type="hidden" name="id" value="{{ app.id }}" />
       <button class="btn btn-success">Print Check-In Form</button>
       {{ csrf_token() }}
@@ -213,7 +213,7 @@
             </label>
           </form>
           {% else %}{{ piece.status_label }}{% endif %}</td>
-        <td> {{ piece.name }} </td>
+        <td> {{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }} </td>
         <td> {{ piece.media }} </td>
         <td> {{ piece.gallery_label }} </td>
         <td> {{ piece.type_label }}

@@ -103,7 +103,7 @@ Invoice #{{ receipt.invoice_num }}
         {% endif %}
         <td> {{ piece.artist_and_piece_id }} </td>
         <td>{{ piece.status_label }}</td>
-        <td> {{ piece.name }} </td>
+        <td> {{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }} </td>
         <td> {{ piece.media }} </td>
         <td> {{ piece.gallery_label }} </td>
         <td> {{ piece.type_label }}
