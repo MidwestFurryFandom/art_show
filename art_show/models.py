@@ -32,6 +32,10 @@ class SessionMixin:
             return attendee, \
                    'There is already an art show application ' \
                    'for that badge!'
+
+        if params.get('not_attending', ''):
+                attendee.badge_status = c.NOT_ATTENDING
+
         return attendee, ''
 
     def lookup_agent_code(self, code):
