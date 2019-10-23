@@ -32,6 +32,7 @@ class SessionMixin:
             return attendee, \
                    'There is already an art show application ' \
                    'for that badge!'
+        return attendee, ''
 
     def lookup_agent_code(self, code):
         return self.query(ArtShowApplication).filter_by(agent_code=code).all()
