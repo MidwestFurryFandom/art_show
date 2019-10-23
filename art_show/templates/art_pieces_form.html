@@ -154,7 +154,7 @@
         </form>
       </div>
       {% endif %}
-      <form role="form" target="_blank" method="post" id="print_form" action="print_check_in_out_form">
+      <form role="form" target="_blank" method="post" id="print_form" action="../art_show_admin/print_check_in_out_form">
       <input type="hidden" name="id" value="{{ app.id }}" />
       <button class="btn btn-success">Print Check-In Form</button>
       {{ csrf_token() }}
