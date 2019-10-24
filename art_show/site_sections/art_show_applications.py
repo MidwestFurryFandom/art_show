@@ -102,6 +102,7 @@ class Root:
 
         if cherrypy.request.method == 'POST':
             piece.app_id = app.id
+            piece.app = app
             message = check(piece)
             if not message:
                 session.add(piece)
