@@ -4,12 +4,12 @@ from uber.config import c
 from uber.models import Session
 
 
-ArtShowApplication.required = [('description', 'Description'),('website','Website URL')]
+ArtShowApplication.required = [('description', 'Description'), ('website', 'Website URL')]
 
 
 @prereg_validation.ArtShowApplication
 def max_panels(app):
-    if app.panels > c.MAX_ART_PANELS:
+    if app.panels > c.MAX_ART_PANELS and app.panels != app.orig_value_of('panels'):
         return 'You cannot have more than {} panels.'.format(c.MAX_ART_PANELS)
 
 
@@ -21,7 +21,7 @@ def min_panels(app):
 
 @prereg_validation.ArtShowApplication
 def max_tables(app):
-    if app.tables > c.MAX_ART_TABLES:
+    if app.tables > c.MAX_ART_TABLES and app.tables != app.orig_value_of('tables'):
         return 'You cannot have more than {} tables.'.format(c.MAX_ART_TABLES)
 
 
@@ -92,8 +92,8 @@ ArtShowPiece.required = [('name', 'Name'),
 @validation.ArtShowPiece
 def no_duplicate_piece_names(piece):
     with Session() as session:
-        if session.query(ArtShowPiece).iexact(name=piece.name).filter(ArtShowPiece.id != piece.id).all():
-            return "There's already a piece with that name."
+        if session.query(ArtShowPiece).iexact(name=piece.name).filter(ArtShowPiece.id != piece.id).filter_by(app_id=piece.app_id).all():
+            return "You already have a piece with that name."
 
 
 @validation.ArtShowPiece
@@ -149,6 +149,14 @@ def price_checks_if_for_sale(piece):
 def name_max_length(piece):
     if len(piece.name) > c.PIECE_NAME_LENGTH:
         return "Piece names must be {} characters or fewer.".format(c.PIECE_NAME_LENGTH)
+
+
+@validation.ArtShowPiece
+def check_in_gallery(piece):
+    if piece.gallery == c.GENERAL and not piece.app.has_general_space:
+        return "You cannot put a piece in the General gallery because you do not have any space there."
+    if piece.gallery == c.MATURE and not piece.app.has_mature_space:
+        return "You cannot put a piece in the Mature gallery because you do not have any space there."
 
 
 @validation.ArtShowPiece

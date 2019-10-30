@@ -103,7 +103,7 @@ Invoice #{{ receipt.invoice_num }}
         {% endif %}
         <td> {{ piece.artist_and_piece_id }} </td>
         <td>{{ piece.status_label }}</td>
-        <td> {{ piece.name }} </td>
+        <td> {{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }} </td>
         <td> {{ piece.media }} </td>
         <td> {{ piece.gallery_label }} </td>
         <td> {{ piece.type_label }}
@@ -156,12 +156,22 @@ Invoice #{{ receipt.invoice_num }}
       {% endif %}
       {% for payment in receipt.art_show_payments %}
       <tr><td colspan="8" class="text-right">
-        {% if payment.type == c.REFUND %}
-        Refund of
-        {% else %}
-        {{ payment.type_label }} payment of
-        {% endif %}${{ '%0.2f' % (payment.amount / 100) }}
-        on {{ payment.when_local|datetime("%-I:%M%p")|lower }} {{ payment.when_local|datetime("%a") }}
+        <form role="form" method="post" action="undo_payment">
+          {%- set payment_desc -%}
+          {%- if payment.type == c.REFUND -%}
+          Refund of
+          {%- else -%}
+          {{ payment.type_label }} payment of
+          {% endif %} ${{ '%0.2f' % (payment.amount / 100) }}
+          {%- endset -%}
+          {{ payment_desc }} on {{ payment.when_local|datetime("%-I:%M%p")|lower }} {{ payment.when_local|datetime("%a") }}
+          &nbsp;
+          <input type="hidden" name="id" value="{{ payment.id }}" />
+          {{ csrf_token() }}
+          <button type="submit" 
+          class="undo_payment btn btn-sm btn-danger glyphicon glyphicon-remove" 
+          data-desc="{{ payment_desc }}"></button>
+        </form>
       </td></tr>
       {% endfor %}
       {% endif %}
@@ -191,5 +201,36 @@ Invoice #{{ receipt.invoice_num }}
     {% elif charge %}
     $('.modal').modal('show');
     {% endif %}
+
+    $(document).ready(function() {
+    $('.undo_payment').on('click', function (event) {
+        event.preventDefault();
+        var $self = $(this),
+            desc = $self.data('desc'),
+            $formToSubmit = $self.closest('form');
+            if (desc.split(" ")[0] == "Refund") {
+              payment_or_refund = "Refund";
+            } else {
+              payment_or_refund = "Payment";
+            }
+            if (desc.split(" ")[0] != "Stripe") {
+                desc = desc.toLowerCase();
+            }
+        bootbox.confirm({
+            backdrop: true,
+            title: 'Delete ' + desc + '?',
+            message: 'Are you sure you want to remove this ' + payment_or_refund.toLowerCase() + '? This cannot be undone.',
+            buttons: {
+                confirm: { label: 'Delete ' + payment_or_refund, className: 'btn-danger' },
+                cancel: { label: 'Nevermind', className: 'btn-default' }
+            },
+            callback: function (result) {
+                if (result) {
+                    $formToSubmit.submit();
+                }
+            }
+        });
+    });
+    });
 </script>
 {% endblock %}

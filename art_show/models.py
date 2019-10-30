@@ -25,38 +25,18 @@ class SessionMixin:
             .options(joinedload('attendee')).all()
 
     def attendee_from_art_show_app(self, **params):
-        message = ''
-        if params.get('attendee_id', ''):
-            try:
-                attendee = self.attendee(id=params['attendee_id'])
-            except Exception:
-                try:
-                    attendee = self.attendee(public_id=params['attendee_id'])
-                except Exception:
-                    return \
-                        None, \
-                        'The confirmation number you entered is not valid, ' \
-                        'or there is no matching badge.'
+        attendee, message = self.create_or_find_attendee_by_id(**params)
+        if message:
+            return attendee, message
+        elif attendee.art_show_applications:
+            return attendee, \
+                   'There is already an art show application ' \
+                   'for that badge!'
 
-            if attendee.badge_status in [c.INVALID_STATUS, c.WATCHED_STATUS]:
-                return None, \
-                       'This badge is invalid. Please contact registration.'
-            elif attendee.art_show_applications:
-                return None, \
-                       'There is already an art show application ' \
-                       'for that badge!'
-        else:
-            attendee_params = {
-                attr: params.get(attr, '')
-                for attr in ['first_name', 'last_name', 'email']}
-            attendee = self.attendee(attendee_params, restricted=True,
-                                     ignore_csrf=True)
-            attendee.placeholder = True
-            if params.get('not_attending', ''):
+        if params.get('not_attending', ''):
                 attendee.badge_status = c.NOT_ATTENDING
-            if not params.get('email', ''):
-                message = 'Email address is a required field.'
-        return attendee, message
+
+        return attendee, ''
 
     def lookup_agent_code(self, code):
         return self.query(ArtShowApplication).filter_by(agent_code=code).all()
@@ -248,6 +228,14 @@ class ArtShowApplication(MagModel):
     @property
     def is_unpaid(self):
         return self.status == c.APPROVED
+
+    @property
+    def has_general_space(self):
+        return self.panels or self.tables
+
+    @property
+    def has_mature_space(self):
+        return self.panels_ad or self.tables_ad
 
     @property
     def highest_piece_id(self):

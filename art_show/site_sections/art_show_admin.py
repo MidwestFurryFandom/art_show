@@ -242,6 +242,7 @@ class Root:
             'checkout': checkout,
         }
 
+    @unrestricted
     def print_check_in_out_form(self, session, id, checkout='', **params):
         app = session.art_show_application(id)
 
@@ -343,6 +344,19 @@ class Root:
             'id': app.id,
             'error': message,
             'success': success,
+        }
+
+    def assign_locations(self, session, message='', **params):
+        valid_apps = session.query(ArtShowApplication).filter_by(status=c.PAID)
+        for app in valid_apps:
+            field_name = '{}_locations'.format(app.id)
+            if field_name in params:
+                app.locations = params.get(field_name)
+                session.add(app)
+
+        return {
+            'apps': valid_apps,
+            'message': message,
         }
 
     @unrestricted
@@ -729,6 +743,15 @@ class Root:
         ))
 
         raise HTTPRedirect('pieces_bought?id={}&message={}', receipt.attendee.id, message)
+
+    def undo_payment(self, session, id, **params):
+        payment = session.art_show_payment(id)
+
+        payment_or_refund = "Refund" if payment.amount < 0 else "Payment"
+
+        session.delete(payment)
+
+        raise HTTPRedirect('pieces_bought?id={}&message={}', payment.receipt.attendee.id, payment_or_refund + "deleted")
 
     def print_receipt(self, session, id, **params):
         receipt = session.art_show_receipt(id)

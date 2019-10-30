@@ -52,7 +52,7 @@
   {% else %}
   <li class="page-item">
     <a class="page-link"
-       href="artist_check_in_out?order={{ order }}&page={{ page }}&search_text={{ search_text|urlencode or '' }}{{ '&checkout=True' if checkout }}">
+       href="artist_check_in_out?order={{ order }}&page={{ pagenum }}&search_text={{ search_text|urlencode or '' }}{{ '&checkout=True' if checkout }}">
       {{ pagenum }}</a>
     {% endif %}
   </li>

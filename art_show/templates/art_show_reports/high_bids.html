@@ -15,7 +15,7 @@
     <td>{{ piece.winning_bidder_num }}</td>
     <td>{{ piece.app.artist_id }}</td>
     <td>{{ piece.piece_id }}</td>
-    <td>{{ piece.name }}</td>
+    <td>{{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }}</td>
     <td>{{ piece.winning_bid }}</td>
   </tr>
   {% if loop.nextitem and loop.nextitem.winning_bidder_num != piece.winning_bidder_num %}

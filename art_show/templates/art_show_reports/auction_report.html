@@ -15,7 +15,7 @@
     <td>{{ piece.artist_and_piece_id }}</td>
     <td>{{ piece.gallery_label }}</td>
     <td>{{ piece.app.display_name }}</td>
-    <td>{{ piece.name }}</td>
+    <td>{{ piece.name|wordwrap(25, wrapstring="<br />"|safe) }}</td>
     <td></td>
   </tr>
   {% endfor %}
