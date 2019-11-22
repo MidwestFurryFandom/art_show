@@ -403,6 +403,13 @@ class Root:
 
         pdf = fpdf.FPDF(unit='pt', format='letter')
         pdf.add_font('3of9', '', os.path.join(config['module_root'], 'free3of9.ttf'), uni=True)
+        
+        def set_fitted_font_size(text, font_size=12, max_size=160):
+            pdf.set_font_size(size=font_size)
+            while pdf.get_string_width(text) > max_size:
+                font_size -= 0.2
+                pdf.set_font_size(size=font_size)
+        
         for index, piece in enumerate(sorted(pieces, key=lambda piece: piece.piece_id)):
             sheet_num = index % 4
             xplus = yplus = 0
@@ -427,12 +434,15 @@ class Root:
 
             # Artist, Title, Media
             pdf.set_font("Arial", size=12)
+            set_fitted_font_size(piece.app.display_name)
             pdf.set_xy(81 + xplus, 54 + yplus)
             pdf.cell(160, 24,
                      txt=(piece.app.display_name),
                      ln=1, align="C")
             pdf.set_xy(81 + xplus, 80 + yplus)
+            set_fitted_font_size(piece.name)
             pdf.cell(160, 24, txt=piece.name, ln=1, align="C")
+            pdf.set_font("Arial", size=12)
             pdf.set_xy(81 + xplus, 105 + yplus)
             pdf.cell(
                 160, 24,
