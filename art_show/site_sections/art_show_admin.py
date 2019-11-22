@@ -59,7 +59,7 @@ class Root:
                     session.add(attendee)
                     app.attendee = attendee
 
-                if 'mark_paid' in params:
+                if 'mark_paid' in params and app.status in [c.APPROVED, c.PAID]:
                     app.status = c.APPROVED if int(params['mark_paid']) == 0 else c.PAID
                 session.add(app)
                 if params.get('save') == 'save_return_to_search':
