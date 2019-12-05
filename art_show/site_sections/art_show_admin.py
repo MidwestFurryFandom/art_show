@@ -353,6 +353,8 @@ class Root:
             if field_name in params:
                 app.locations = params.get(field_name)
                 session.add(app)
+                
+        session.commit()
 
         return {
             'apps': valid_apps,
