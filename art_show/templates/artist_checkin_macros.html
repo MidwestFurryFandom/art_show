@@ -22,9 +22,14 @@ display: none;
         </div>
         <div class="modal-footer">
           {% set print_invoice = checkout and app.total_sales %}
-          <button type="submit" class="btn btn-primary save_app print{{ ' print_invoice' if print_invoice }}">
-            Save & Print Form{{ ' + Invoice' if print_invoice }}
+          <button type="submit" class="btn btn-primary save_app print">
+            Save & Print Form
           </button>
+          {% if print_invoice %}
+          <button type="submit" class="btn btn-primary save_app print_invoice">
+            Save & Print Invoice
+          </button>
+          {% endif %}
           {% if not app.checked_in %}
           <input type="hidden" class="complete" name="check_in" />
           <button type="submit" class="btn btn-success save_app action">Save & Check-In</button>
