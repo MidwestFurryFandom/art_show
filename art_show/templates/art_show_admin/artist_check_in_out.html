@@ -140,14 +140,16 @@
                             if (!response['error']) {
                                 var $modals = $('#app_modals').find('.modal');
 
-                                if (print) {
+                                if (print || print_invoice) {
+                                  $('.print_id').val(response['id']);
+                                  if (print) {
                                     window.open('', 'print_form_target', 'width=400,height=400,resizeable,scrollbars');
-                                    $('.print_id').val(response['id']);
                                     $('#print_form').attr('target', 'print_form_target').submit();
-                                    if (print_invoice) {
-                                        window.open('', 'print_invoice_target', 'width=400,height=400,resizeable,scrollbars');
-                                        $('#print_invoice').attr('target', 'print_invoice_target').submit();
-                                    }
+                                  }
+                                  if (print_invoice) {
+                                      window.open('', 'print_invoice_target', 'width=400,height=400,resizeable,scrollbars');
+                                      $('#print_invoice').attr('target', 'print_invoice_target').submit();
+                                  }
                                 } else {
                                     $modals.modal('hide');
                                     location.href = '?{% if checkout %}checkout=True&{% endif %}message=' + response['success'];
