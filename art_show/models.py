@@ -262,7 +262,8 @@ class ArtShowApplication(MagModel):
 
     @property
     def amount_paid(self):
-        return max(0, self.attendee.amount_paid - (self.attendee.total_cost - self.total_cost))
+        if self.attendee:
+            return max(0, self.attendee.amount_paid - (self.attendee.total_cost - self.total_cost))
 
 
 class ArtShowPiece(MagModel):
